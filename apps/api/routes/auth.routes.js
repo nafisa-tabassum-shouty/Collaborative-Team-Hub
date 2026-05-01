@@ -38,7 +38,42 @@ const setCookies = (res, accessToken, refreshToken) => {
   });
 };
 
-// POST /api/auth/register
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: User authentication and management
+ */
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Invalid input or email already exists
+ */
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -74,7 +109,32 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// POST /api/auth/login
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Login user and set cookies
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ */
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -105,7 +165,16 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// POST /api/auth/logout
+/**
+ * @swagger
+ * /api/auth/logout:
+ *   post:
+ *     summary: Logout user and clear cookies
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ */
 router.post('/logout', (req, res) => {
   try {
     const cookieOptions = {
@@ -123,7 +192,20 @@ router.post('/logout', (req, res) => {
   }
 });
 
-// POST /api/auth/refresh
+/**
+ * @swagger
+ * /api/auth/refresh:
+ *   post:
+ *     summary: Refresh access token using refresh token cookie
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: No refresh token provided
+ *       403:
+ *         description: Invalid refresh token
+ */
 router.post('/refresh', (req, res) => {
   try {
     const { refreshToken } = req.cookies;
@@ -157,7 +239,22 @@ router.post('/refresh', (req, res) => {
   }
 });
 
-// GET /api/auth/me - Get current logged-in user (used by frontend on page load)
+/**
+ * @swagger
+ * /api/auth/me:
+ *   get:
+ *     summary: Get current logged-in user profile
+ *     tags: [Auth]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: User profile fetched successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User not found
+ */
 const { requireAuth } = require('../middleware/auth.middleware');
 router.get('/me', requireAuth, async (req, res) => {
   try {

@@ -32,7 +32,48 @@ const checkWorkspaceMember = async (workspaceId, userId) => {
   return !!membership;
 };
 
-// GET /api/workspaces - List all workspaces for logged-in user
+/**
+ * @swagger
+ * tags:
+ *   name: Workspaces
+ *   description: Workspace management and collaboration
+ */
+
+/**
+ * @swagger
+ * /api/workspaces:
+ *   get:
+ *     summary: List all workspaces for the logged-in user
+ *     tags: [Workspaces]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: List of workspaces fetched successfully
+ *   post:
+ *     summary: Create a new workspace
+ *     tags: [Workspaces]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               accentColor:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Workspace created successfully
+ */
 router.get('/', async (req, res) => {
   try {
     const workspaces = await prisma.workspace.findMany({
@@ -60,7 +101,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST /api/workspaces - Create a new workspace
 router.post('/', async (req, res) => {
   try {
     const { name, description, accentColor } = req.body;
@@ -90,7 +130,66 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/workspaces/:id - Get single workspace
+/**
+ * @swagger
+ * /api/workspaces/{id}:
+ *   get:
+ *     summary: Get single workspace details
+ *     tags: [Workspaces]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Workspace details fetched successfully
+ *       404:
+ *         description: Workspace not found
+ *   put:
+ *     summary: Update workspace details (Admin only)
+ *     tags: [Workspaces]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               accentColor:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Workspace updated successfully
+ *   delete:
+ *     summary: Delete workspace (Admin only)
+ *     tags: [Workspaces]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Workspace deleted successfully
+ */
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -123,7 +222,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// PUT /api/workspaces/:id - Update workspace
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -148,7 +246,6 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/workspaces/:id - Delete workspace
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;

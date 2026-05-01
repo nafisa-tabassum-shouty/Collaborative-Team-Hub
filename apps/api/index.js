@@ -53,6 +53,9 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "API is running" });
 });
 
+// Swagger Documentation
+require("./swagger")(app);
+
 // Initialize real-time Socket.io logic
 require("./socket")(io);
 
