@@ -856,3 +856,17 @@ All 16 prompts have been successfully implemented following a professional, bran
 
 **Final Status:** ✅ 100% Completed
 **Date:** May 1, 2026
+
+---
+
+### Prompt 17 (Expert Git Workflow Strategy)
+I want to organize my GitHub commits in an expert way so that each commit is meaningful and linked to a specific task. I have a list of prompts that describe each change I made in detail. Please guide me to commit each change separately based on these prompts.
+
+**Requirements:**
+- Ensure that each commit has a concise, descriptive message (Conventional Commits style).
+- Implement proper branch usage (`feat/`, `fix/`, `docs/`) for each feature/task.
+- Use a clean merge strategy (`--no-ff`) to maintain a structured history.
+- Align each commit with a corresponding task from the prompt list.
+- Keep the repository organized and scalable.
+
+**Status:** ✅ Implemented and applied to all previous 16 prompts.
