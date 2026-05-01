@@ -15,35 +15,26 @@ export default function ThemeToggle({ compact = false }) {
   if (compact) {
     const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
     return (
-      <button
-        onClick={() => setTheme(isDark ? "light" : "dark")}
-        title="Toggle theme"
-        className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 border border-transparent hover:border-border-color"
-        aria-label="Toggle dark mode"
-      >
-        {isDark ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
-    );
-  }
-
   return (
-    <div className="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-1 border border-border-color">
-      {THEME_OPTIONS.map((opt) => {
-        const Icon = opt.icon;
+    <div className="flex p-1 bg-bg-secondary/50 backdrop-blur-sm border border-border-color rounded-xl w-full">
+      {THEME_OPTIONS.map((option) => {
+        const Icon = option.icon;
+        const isActive = theme === option.value;
         return (
           <button
-            key={opt.value}
-            onClick={() => setTheme(opt.value)}
-            title={opt.label}
-            aria-label={`Switch to ${opt.label} theme`}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              theme === opt.value
-                ? "bg-white dark:bg-gray-700 text-accent dark:text-white shadow-md ring-1 ring-black/5"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
-            }`}
+            key={option.value}
+            onClick={() => setTheme(option.value)}
+            className={`
+              flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-300
+              ${isActive 
+                ? "bg-white dark:bg-gray-800 text-accent shadow-sm ring-1 ring-black/5 dark:ring-white/10" 
+                : "text-text-muted hover:text-text-primary hover:bg-white/40 dark:hover:bg-gray-800/40"
+              }
+            `}
+            title={option.label}
           >
-            <Icon size={14} />
-            <span>{opt.label}</span>
+            <Icon className={`w-3.5 h-3.5 ${isActive ? "text-accent" : "text-text-muted"}`} />
+            {!compact && <span>{option.label}</span>}
           </button>
         );
       })}
