@@ -67,3 +67,74 @@ Once Phase 1 (Foundation) is complete, we can spawn separate browser/command age
 - Agent A: Backend API endpoints and Prisma Schema.
 - Agent B: Frontend UI components and Tailwind styling. 
 We will coordinate their progress via this central plan.
+
+---
+
+## Phase 6: Advanced Collaborative Editing (Phase 2 Add-on)
+
+# Feature 1: Real-time Collaborative Editing Implementation Plan
+
+### Backend Changes (apps/api)
+1. **Socket Service Enhancement:**
+   - Create `services/presenceService.js` to manage active users in goals.
+   - Update `socket.js` to handle `goal:join`, `goal:update`, and `goal:cursor-move`.
+   - Implement broadcasting logic to exclude the sender.
+
+2. **Route Update:**
+   - Ensure Goal update API is optimized for batch updates.
+
+### Frontend Changes (apps/web)
+1. **Zustand Store:**
+   - Add `activeCollaborators` and `isTyping` states.
+   - Implement actions to update remote cursors.
+
+2. **Components:**
+   - Build `CollaborativeEditor.jsx` using a controlled textarea or rich-text library (like TipTap/Quill in simple mode).
+   - Show avatars of active users at the top of the editor.
+   - Render "Remote Cursors" over the text area.
+
+3. **Logic:**
+   - Use `useSocket` to emit `goal:cursor-move` on mouse/selection change.
+   - Emit `goal:update` on change.
+   - Implement `useDebounce` to call `api.put('/goals/:id')` after typing stops.
+
+### Testing Strategy
+- Open two browser tabs and verify:
+  - Cursors move in sync.
+  - Text updates reflect instantly.
+  - User list updates when a tab is closed.
+
+---
+
+# Phase 2: Advanced Staff-Level Features Walkthrough Summary
+
+The **Collaborative Team Hub** is now equipped with five industry-standard advanced features. Below is a summary of the implementation and how to use them.
+
+### 🚀 1. Real-time Collaborative Editing
+**Technical Detail:** Uses Socket.io rooms (`goal_${id}`) and an in-memory `presenceService` on the backend.
+- **How to use:** Open two different browser sessions for the same Goal. You will see avatars of active users and instant text synchronization as you type.
+- **Key Logic:** Debounced persistence (2s) ensures database writes are efficient.
+
+### ⚡ 2. Optimistic UI System
+**Technical Detail:** Integrated into Zustand stores (`goalStore`, `actionItemStore`).
+- **How to use:** Update a goal status or drag a task in the Kanban board. The UI updates instantly before the server confirms.
+- **Resilience:** If the API fails, the system automatically rolls back to the previous state and shows an error toast.
+
+### 📡 3. Offline Support (PWA + Queue System)
+**Technical Detail:** Uses `localStorage` persistence and a custom `offlineStore` with an action queue.
+- **How to use:** Disable your internet (Airplane mode) and try to create a Goal.
+- **Sync Logic:** The app will show a "You are offline" notification. Once you reconnect, it will automatically sync all pending actions and show a success toast.
+
+### 🛡️ 4. Advanced RBAC
+**Technical Detail:** Granular permission matrix mapped to `ADMIN` and `MEMBER` roles.
+- **How to use:** Login as a `MEMBER`. You will notice you cannot delete the workspace or invite new members (backend middleware and frontend `usePermission` hook enforcement).
+- **Security:** Every sensitive API endpoint is protected by `requirePermission(PERMISSIONS.ACTION)`.
+
+### 📜 5. Audit Log System
+**Technical Detail:** Asynchronous, non-blocking logging service with an immutable database trail.
+- **How to use:** Navigate to the "Workspace Activity" section (or `GET /api/workspaces/:id/audit-logs`).
+- **Features:** A visual timeline of all actions (Who, What, When) and a **CSV Export** button for reporting.
+
+---
+**Final Status:** All 5 Advanced Features Implemented and Merged.
+
