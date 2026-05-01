@@ -52,6 +52,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: "Failed to fetch goals" });
   }
 });
+const { logActivity } = require('../services/auditService');
 
 // POST / - Create a new goal
 router.post('/', async (req, res) => {
@@ -79,6 +80,16 @@ router.post('/', async (req, res) => {
       include: {
         owner: { select: { id: true, name: true, avatarUrl: true } }
       }
+    });
+
+    // Log Activity
+    logActivity({
+      action: "CREATED_GOAL",
+      entity: "Goal",
+      entityId: newGoal.id,
+      workspaceId,
+      userId: req.user.id,
+      details: { title: newGoal.title }
     });
 
     res.status(201).json({ message: "Goal created successfully", goal: newGoal });
@@ -143,6 +154,16 @@ router.put('/:goalId', async (req, res) => {
       }
     });
 
+    // Log Activity
+    logActivity({
+      action: "UPDATED_GOAL",
+      entity: "Goal",
+      entityId: goalId,
+      workspaceId: goal.workspaceId,
+      userId: req.user.id,
+      details: { title: updatedGoal.title, status: updatedGoal.status }
+    });
+
     res.status(200).json({ message: "Goal updated", goal: updatedGoal });
   } catch (error) {
     res.status(500).json({ error: "Failed to update goal" });
@@ -164,6 +185,16 @@ router.delete('/:goalId', async (req, res) => {
     }
 
     await prisma.goal.delete({ where: { id: goalId } });
+
+    // Log Activity
+    logActivity({
+      action: "DELETED_GOAL",
+      entity: "Goal",
+      entityId: goalId,
+      workspaceId: goal.workspaceId,
+      userId: req.user.id,
+      details: { title: goal.title }
+    });
 
     res.status(200).json({ message: "Goal deleted successfully" });
   } catch (error) {

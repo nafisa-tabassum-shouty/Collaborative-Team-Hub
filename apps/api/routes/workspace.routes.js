@@ -228,4 +228,36 @@ router.delete('/:id', requireAuth, requirePermission(PERMISSIONS.MANAGE_WORKSPAC
   }
 });
 
+/**
+ * @swagger
+ * /api/workspaces/{id}/audit-logs:
+ *   get:
+ *     summary: Get audit logs for a workspace
+ *     tags: [Workspaces]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ */
+router.get('/:id/audit-logs', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const logs = await prisma.auditLog.findMany({
+      where: { workspaceId: id },
+      include: {
+        user: { select: { name: true, avatarUrl: true } }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100 // Limit for performance
+    });
+    res.status(200).json(logs);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch audit logs" });
+  }
+});
+
 module.exports = router;

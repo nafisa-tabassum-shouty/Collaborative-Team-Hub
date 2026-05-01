@@ -97,6 +97,8 @@ router.get('/', async (req, res) => {
 // CREATE ACTION ITEM (/api/goals/:goalId/action-items)
 // ==========================================
 
+const { logActivity } = require('../services/auditService');
+
 router.post('/', async (req, res) => {
   try {
     const { goalId } = req.params;
@@ -129,6 +131,16 @@ router.post('/', async (req, res) => {
       include: {
         assignee: { select: { id: true, name: true, avatarUrl: true } }
       }
+    });
+
+    // Log Activity
+    logActivity({
+      action: "CREATED_TASK",
+      entity: "ActionItem",
+      entityId: actionItem.id,
+      workspaceId: goal.workspaceId,
+      userId: req.user.id,
+      details: { title: actionItem.title }
     });
 
     res.status(201).json({ message: "Action item created", actionItem });
@@ -183,6 +195,16 @@ router.put('/:id', async (req, res) => {
       }
     });
 
+    // Log Activity
+    logActivity({
+      action: "UPDATED_TASK",
+      entity: "ActionItem",
+      entityId: id,
+      workspaceId: actionItem.goal.workspaceId,
+      userId: req.user.id,
+      details: { title: updatedItem.title, status: updatedItem.status }
+    });
+
     // Real-time Event: Kanban board update
     req.io.to(`workspace_${actionItem.goal.workspaceId}`).emit("actionItem:update", {
       actionItemId: updatedItem.id,
@@ -213,6 +235,16 @@ router.delete('/:id', async (req, res) => {
     }
 
     await prisma.actionItem.delete({ where: { id } });
+
+    // Log Activity
+    logActivity({
+      action: "DELETED_TASK",
+      entity: "ActionItem",
+      entityId: id,
+      workspaceId: actionItem.goal.workspaceId,
+      userId: req.user.id,
+      details: { title: actionItem.title }
+    });
 
     res.status(200).json({ message: "Action item deleted successfully" });
   } catch (error) {
