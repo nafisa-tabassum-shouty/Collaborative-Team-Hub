@@ -1,0 +1,363 @@
+const express = require('express');
+const router = express.Router({ mergeParams: true });
+const prisma = require('../lib/prisma');
+const { requireAuth } = require('../middleware/auth.middleware');
+
+router.use(requireAuth);
+
+// Helper: Check workspace membership
+const checkWorkspaceMember = async (workspaceId, userId) => {
+  const membership = await prisma.workspaceMember.findUnique({
+    where: { userId_workspaceId: { userId, workspaceId } },
+  });
+  return membership;
+};
+
+// Helper: Get announcement and check workspace access
+const getAnnouncementAndMembership = async (announcementId, userId) => {
+  const announcement = await prisma.announcement.findUnique({
+    where: { id: announcementId },
+    select: { workspaceId: true }
+  });
+  if (!announcement) return { announcement: null, membership: null };
+
+  const membership = await checkWorkspaceMember(announcement.workspaceId, userId);
+  return { announcement, membership };
+};
+
+
+// ==========================================
+// WORKSPACE ANNOUNCEMENTS (/api/workspaces/:workspaceId/announcements)
+// ==========================================
+
+// GET / - Get all announcements for a workspace (sorted: pinned first)
+router.get('/', async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    if (!workspaceId) return res.status(400).json({ error: "workspaceId is required" });
+
+    const membership = await checkWorkspaceMember(workspaceId, req.user.id);
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const announcements = await prisma.announcement.findMany({
+      where: { workspaceId },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        _count: { select: { comments: true } },
+        // Group reactions by emoji using JS later, or just return them
+        reactions: {
+          select: { emoji: true, userId: true }
+        }
+      },
+      orderBy: [
+        { isPinned: 'desc' },
+        { createdAt: 'desc' }
+      ]
+    });
+
+    // Format reaction summaries (count per emoji)
+    const formattedAnnouncements = announcements.map(ann => {
+      const reactionSummary = {};
+      ann.reactions.forEach(r => {
+        if (!reactionSummary[r.emoji]) reactionSummary[r.emoji] = { count: 0, userReacted: false };
+        reactionSummary[r.emoji].count += 1;
+        if (r.userId === req.user.id) reactionSummary[r.emoji].userReacted = true;
+      });
+
+      return { ...ann, reactions: reactionSummary };
+    });
+
+    res.status(200).json(formattedAnnouncements);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch announcements" });
+  }
+});
+
+// POST / - Create announcement (ADMIN only)
+router.post('/', async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { content, isPinned } = req.body;
+
+    if (!workspaceId) return res.status(400).json({ error: "workspaceId is required" });
+    if (!content) return res.status(400).json({ error: "Content is required" });
+
+    const membership = await checkWorkspaceMember(workspaceId, req.user.id);
+    if (!membership || membership.role !== 'ADMIN') {
+      return res.status(403).json({ error: "Only admins can post announcements." });
+    }
+
+    const announcement = await prisma.announcement.create({
+      data: {
+        content,
+        isPinned: isPinned || false,
+        workspaceId,
+        authorId: req.user.id
+      },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } }
+      }
+    });
+
+    // Real-time Event: Broadcast new announcement to workspace members
+    req.io.to(`workspace_${workspaceId}`).emit("announcement:new", announcement);
+
+    // Optional: Detect @mentions and emit notifications
+    const mentions = content.match(/@(\w+)/g);
+    if (mentions) {
+      // Find users by their usernames (requires logic to map username to id, simplified here)
+      // If we had a unique username field, we'd query it. For now, we can emit a general notification event
+      // that the frontend processes or we look up members.
+      req.io.to(`workspace_${workspaceId}`).emit("notification:new", {
+        type: "mention",
+        message: `${req.user.name} mentioned you in an announcement.`,
+        announcementId: announcement.id
+      });
+    }
+
+    res.status(201).json({ message: "Announcement created", announcement });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to create announcement" });
+  }
+});
+
+
+// ==========================================
+// SINGLE ANNOUNCEMENT (/api/announcements/:id)
+// ==========================================
+
+// GET /:id - Get single announcement with full comments
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { announcement: checkAnn, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!checkAnn) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const announcement = await prisma.announcement.findUnique({
+      where: { id },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } },
+        reactions: true,
+        comments: {
+          include: { author: { select: { id: true, name: true, avatarUrl: true } } },
+          orderBy: { createdAt: 'asc' }
+        }
+      }
+    });
+
+    res.status(200).json(announcement);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch announcement details" });
+  }
+});
+
+// PUT /:id - Update announcement (ADMIN only)
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content, isPinned } = req.body;
+
+    const { announcement, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership || membership.role !== 'ADMIN') {
+      return res.status(403).json({ error: "Only admins can update announcements." });
+    }
+
+    const updated = await prisma.announcement.update({
+      where: { id },
+      data: { content, isPinned }
+    });
+
+    res.status(200).json({ message: "Announcement updated", announcement: updated });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update announcement" });
+  }
+});
+
+// DELETE /:id - Delete announcement (ADMIN only)
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { announcement, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership || membership.role !== 'ADMIN') {
+      return res.status(403).json({ error: "Only admins can delete announcements." });
+    }
+
+    await prisma.announcement.delete({ where: { id } });
+
+    res.status(200).json({ message: "Announcement deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete announcement" });
+  }
+});
+
+
+// ==========================================
+// REACTIONS (/api/announcements/:id/reactions)
+// ==========================================
+
+// POST /:id/reactions - Add an emoji reaction
+router.post('/:id/reactions', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { emoji } = req.body;
+
+    if (!emoji) return res.status(400).json({ error: "Emoji is required" });
+
+    const { announcement, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const reaction = await prisma.reaction.create({
+      data: {
+        emoji,
+        userId: req.user.id,
+        announcementId: id
+      }
+    });
+
+    // Real-time Event: Broadcast reaction update
+    req.io.to(`workspace_${announcement.workspaceId}`).emit("reaction:update", {
+      announcementId: id,
+      action: "add",
+      emoji,
+      userId: req.user.id
+    });
+
+    res.status(201).json({ message: "Reaction added", reaction });
+  } catch (error) {
+    // P2002 means the unique constraint failed (already reacted with this emoji)
+    if (error.code === 'P2002') {
+      return res.status(400).json({ error: "You already reacted with this emoji" });
+    }
+    res.status(500).json({ error: "Failed to add reaction" });
+  }
+});
+
+// DELETE /:id/reactions - Remove a specific emoji reaction
+router.delete('/:id/reactions', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { emoji } = req.body; // Usually DELETE with body is fine in modern APIs, but could also be via query
+
+    if (!emoji) return res.status(400).json({ error: "Emoji is required" });
+
+    const { announcement, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    // Use deleteMany to delete matching user + announcement + emoji
+    const deleted = await prisma.reaction.deleteMany({
+      where: {
+        userId: req.user.id,
+        announcementId: id,
+        emoji: emoji
+      }
+    });
+
+    if (deleted.count === 0) {
+      return res.status(404).json({ error: "Reaction not found" });
+    }
+
+    res.status(200).json({ message: "Reaction removed" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to remove reaction" });
+  }
+});
+
+
+// ==========================================
+// COMMENTS (/api/announcements/:id/comments)
+// ==========================================
+
+// POST /:id/comments - Add comment
+router.post('/:id/comments', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!content) return res.status(400).json({ error: "Content is required" });
+
+    const { announcement, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        authorId: req.user.id,
+        announcementId: id
+      },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } }
+      }
+    });
+
+    res.status(201).json({ message: "Comment added", comment });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add comment" });
+  }
+});
+
+// PUT /:id/comments/:commentId - Edit comment (Owner only)
+router.put('/:id/comments/:commentId', async (req, res) => {
+  try {
+    const { id, commentId } = req.params;
+    const { content } = req.body;
+
+    if (!content) return res.status(400).json({ error: "Content is required" });
+
+    const { announcement, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const existingComment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!existingComment) return res.status(404).json({ error: "Comment not found" });
+
+    if (existingComment.authorId !== req.user.id) {
+      return res.status(403).json({ error: "You can only edit your own comments" });
+    }
+
+    const updated = await prisma.comment.update({
+      where: { id: commentId },
+      data: { content }
+    });
+
+    res.status(200).json({ message: "Comment updated", comment: updated });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update comment" });
+  }
+});
+
+// DELETE /:id/comments/:commentId - Delete comment (Owner or Admin)
+router.delete('/:id/comments/:commentId', async (req, res) => {
+  try {
+    const { id, commentId } = req.params;
+
+    const { announcement, membership } = await getAnnouncementAndMembership(id, req.user.id);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const existingComment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!existingComment) return res.status(404).json({ error: "Comment not found" });
+
+    const isOwner = existingComment.authorId === req.user.id;
+    const isAdmin = membership.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ error: "Only the author or an admin can delete this comment" });
+    }
+
+    await prisma.comment.delete({ where: { id: commentId } });
+
+    res.status(200).json({ message: "Comment deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete comment" });
+  }
+});
+
+module.exports = router;
