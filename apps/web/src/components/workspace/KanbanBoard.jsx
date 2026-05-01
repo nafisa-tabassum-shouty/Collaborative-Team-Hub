@@ -1,6 +1,7 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useActionItemStore from "@/store/actionItemStore";
+import useGoalStore from "@/store/goalStore";
 
 const COLUMNS = [
   { id: "TODO",        label: "To Do",       color: "border-gray-400 dark:border-gray-600", badge: "bg-bg-secondary text-text-secondary" },
@@ -15,10 +16,14 @@ const PRIORITY_COLORS = {
 };
 
 export default function KanbanBoard({ workspaceId }) {
-  const { actionItems, fetchActionItems, updateActionItem, isLoading } = useActionItemStore();
+  const { actionItems, fetchActionItems, createActionItem, updateActionItem, isLoading } = useActionItemStore();
+  const { goals, fetchGoals } = useGoalStore();
+  const [showTaskForm, setShowTaskForm] = useState(null); // columnId
+  const [taskForm, setTaskForm] = useState({ title: "", goalId: "", priority: "MEDIUM" });
 
   useEffect(() => {
     fetchActionItems(workspaceId);
+    fetchGoals(workspaceId);
   }, [workspaceId]);
 
   const grouped = {
@@ -27,83 +32,137 @@ export default function KanbanBoard({ workspaceId }) {
     DONE:        actionItems.filter((i) => i.status === "DONE"),
   };
 
-  const moveCard = async (itemId, newStatus) => {
-    await updateActionItem(itemId, { status: newStatus });
+  const handleCreateTask = async (e) => {
+    e.preventDefault();
+    if (!taskForm.goalId) return alert("Please select a Goal for this task");
+    
+    await createActionItem(taskForm.goalId, { 
+      ...taskForm, 
+      status: showTaskForm,
+      workspaceId // Just in case
+    });
+    
+    setTaskForm({ title: "", goalId: "", priority: "MEDIUM" });
+    setShowTaskForm(null);
+    fetchActionItems(workspaceId); // Refresh
   };
-
-  if (isLoading) {
-    return (
-      <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 transition-colors">
-        {COLUMNS.map((col) => (
-          <div key={col.id} className="bg-bg-card rounded-xl p-4 space-y-3 animate-pulse border border-border-color">
-            <div className="h-4 bg-bg-secondary rounded w-1/2 mb-4" />
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="h-20 bg-bg-secondary rounded-lg" />
-            ))}
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 transition-colors">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-text-primary">Kanban Board</h2>
-        <p className="text-text-secondary text-sm mt-1">Manage tasks across your team</p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-text-primary">Kanban Board</h2>
+          <p className="text-text-secondary text-sm mt-1">Operational task management and workflow</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {COLUMNS.map((col) => (
           <div
             key={col.id}
-            className={`bg-bg-card border border-border-color border-t-4 ${col.color} rounded-xl p-4 min-h-[400px] shadow-sm transition-colors`}
+            className={`flex flex-col bg-bg-card/40 backdrop-blur-sm border border-border-color border-t-4 ${col.color} rounded-2xl min-h-[600px] shadow-sm transition-all`}
           >
             {/* Column header */}
-            <div className="flex items-center justify-between mb-4 px-1">
-              <span className="font-bold text-xs uppercase tracking-wider text-text-primary">{col.label}</span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${col.badge}`}>
-                {grouped[col.id].length}
-              </span>
+            <div className="flex items-center justify-between p-4 border-b border-border-color/50">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-xs uppercase tracking-widest text-text-primary">{col.label}</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shadow-inner ${col.badge}`}>
+                  {grouped[col.id].length}
+                </span>
+              </div>
+              <button 
+                onClick={() => setShowTaskForm(showTaskForm === col.id ? null : col.id)}
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-bg-secondary text-text-primary hover:bg-accent hover:text-white transition-all shadow-sm"
+              >
+                +
+              </button>
             </div>
 
-            {/* Cards */}
-            <div className="space-y-3">
-              {grouped[col.id].length === 0 && (
-                <div className="border border-dashed border-border-color rounded-lg py-12 text-center">
-                  <p className="text-text-muted text-[10px] font-medium uppercase tracking-widest">No tasks</p>
+            {/* Quick Add Form */}
+            {showTaskForm === col.id && (
+              <div className="p-3 bg-bg-secondary/30 animate-in fade-in slide-in-from-top-2 duration-200">
+                <form onSubmit={handleCreateTask} className="space-y-3 bg-bg-card p-4 rounded-xl border border-accent/20 shadow-lg">
+                  <input
+                    required
+                    autoFocus
+                    placeholder="Task title..."
+                    value={taskForm.title}
+                    onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
+                    className="w-full bg-input-bg border border-border-color rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-accent outline-none"
+                  />
+                  <select
+                    required
+                    value={taskForm.goalId}
+                    onChange={(e) => setTaskForm({ ...taskForm, goalId: e.target.value })}
+                    className="w-full bg-input-bg border border-border-color rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-accent outline-none"
+                  >
+                    <option value="">Select Goal...</option>
+                    {goals.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      value={taskForm.priority}
+                      onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value })}
+                      className="flex-1 bg-input-bg border border-border-color rounded-lg px-3 py-2 text-xs outline-none"
+                    >
+                      <option value="LOW">Low</option>
+                      <option value="MEDIUM">Medium</option>
+                      <option value="HIGH">High</option>
+                    </select>
+                    <button type="submit" className="bg-accent text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-all">
+                      Add
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Cards Area */}
+            <div className="flex-1 p-3 space-y-3 overflow-y-auto max-h-[70vh] custom-scrollbar">
+              {grouped[col.id].length === 0 && !showTaskForm && (
+                <div className="h-full flex flex-col items-center justify-center py-20 opacity-40">
+                  <div className="text-3xl mb-2">📋</div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">No Tasks</p>
                 </div>
               )}
               {grouped[col.id].map((item) => (
                 <div
                   key={item.id}
-                  className="bg-bg-primary border border-border-color rounded-lg p-3 hover:border-accent/50 hover:shadow-md transition-all group cursor-default"
+                  className="bg-bg-card border border-border-color rounded-xl p-4 hover:border-accent/40 hover:shadow-xl transition-all group animate-in fade-in duration-300"
                 >
-                  <p className="text-sm font-medium text-text-primary mb-2 line-clamp-2 leading-snug">{item.title}</p>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-[10px] font-bold uppercase tracking-tight ${PRIORITY_COLORS[item.priority] || PRIORITY_COLORS.MEDIUM}`}>
-                      {item.priority}
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`text-[9px] font-black uppercase tracking-tighter ${PRIORITY_COLORS[item.priority] || PRIORITY_COLORS.MEDIUM}`}>
+                      ● {item.priority}
                     </span>
                     {item.assignee && (
-                      <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-[10px] font-bold text-white shadow-sm" title={item.assignee.name}>
+                      <div className="w-5 h-5 rounded-full bg-accent border border-bg-card flex items-center justify-center text-[8px] font-black text-white" title={item.assignee.name}>
                         {item.assignee.name?.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
-                  {item.dueDate && (
-                    <p className="text-[10px] text-text-muted mt-2 font-medium">
-                      📅 {new Date(item.dueDate).toLocaleDateString()}
-                    </p>
-                  )}
-                  {/* Quick move buttons */}
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border-color/50 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
+                  <p className="text-sm font-bold text-text-primary mb-3 leading-tight group-hover:text-accent transition-colors">{item.title}</p>
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-border-color/30">
+                    <div className="flex flex-col">
+                       <span className="text-[9px] font-bold text-text-muted uppercase">Goal</span>
+                       <span className="text-[10px] font-bold text-text-secondary truncate max-w-[120px]">{item.goal?.title || "N/A"}</span>
+                    </div>
+                    {item.dueDate && (
+                      <span className="text-[9px] font-bold text-text-muted">
+                        📅 {new Date(item.dueDate).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Move Actions */}
+                  <div className="flex gap-1.5 mt-4 pt-3 border-t border-border-color/30 opacity-0 group-hover:opacity-100 transition-all transform translate-y-1 group-hover:translate-y-0">
                     {COLUMNS.filter((c) => c.id !== col.id).map((c) => (
                       <button
                         key={c.id}
-                        onClick={() => moveCard(item.id, c.id)}
-                        className="text-[10px] font-bold text-accent hover:text-accent-hover transition-colors flex-1 text-left"
+                        onClick={() => updateActionItem(item.id, { status: c.id })}
+                        className="text-[9px] font-black text-accent hover:bg-accent/10 px-2 py-1 rounded transition-colors flex-1 text-center bg-bg-secondary/50"
                       >
-                        → {c.label}
+                        {c.label} →
                       </button>
                     ))}
                   </div>
