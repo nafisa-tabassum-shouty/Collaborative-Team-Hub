@@ -870,3 +870,31 @@ I want to organize my GitHub commits in an expert way so that each commit is mea
 - Keep the repository organized and scalable.
 
 **Status:** ✅ Implemented and applied to all previous 16 prompts.
+
+---
+
+# PHASE 2: Advanced Staff-Level Architect Features
+
+I want to implement 5 advanced features in a structured, scalable, and interview-ready way.
+
+## FEATURE 1: Real-time Collaborative Editing (Google Docs style)
+- Live cursors, user presence, and real-time syncing using Socket.io rooms.
+- Conflict resolution and efficient persistence to PostgreSQL.
+
+## FEATURE 2: Optimistic UI System
+- Instant UI feedback with global rollback handler using Zustand.
+- Handling race conditions and API failures gracefully.
+
+## FEATURE 3: Offline Support (PWA + Queue System)
+- OfflineQueue for pending mutations (Create/Update/Delete).
+- Automatic sync on reconnection with retry logic.
+
+## FEATURE 4: Advanced RBAC (Role-Based Access Control Matrix)
+- Granular permissions (create_goal, manage_settings, etc.).
+- Backend middleware enforcement and frontend UI conditional rendering.
+
+## FEATURE 5: Audit Log System (Immutable Activity Timeline)
+- Immutable activity tracking for all workspace actions.
+- Timeline UI with advanced filtering and CSV export.
+
+**Status:** ⏳ Pending Implementation
