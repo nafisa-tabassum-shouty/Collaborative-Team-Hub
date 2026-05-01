@@ -260,48 +260,4 @@ router.get('/:id/audit-logs', requireAuth, async (req, res) => {
   }
 });
 
-/**
- * @swagger
- * /api/workspaces/{id}/leave:
- *   post:
- *     summary: Leave a workspace
- *     tags: [Workspaces]
- *     security:
- *       - cookieAuth: []
- */
-router.post('/:id/leave', requireAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;
-
-    // Check if the user is a member
-    const membership = await prisma.workspaceMember.findUnique({
-      where: { userId_workspaceId: { userId, workspaceId: id } }
-    });
-
-    if (!membership) return res.status(404).json({ error: "You are not a member of this workspace" });
-
-    // If user is an admin, check if they are the last admin
-    if (membership.role === 'ADMIN') {
-      const adminCount = await prisma.workspaceMember.count({
-        where: { workspaceId: id, role: 'ADMIN' }
-      });
-
-      if (adminCount <= 1) {
-        return res.status(400).json({ 
-          error: "You are the last admin. Please promote another member to admin or delete the workspace instead." 
-        });
-      }
-    }
-
-    await prisma.workspaceMember.delete({
-      where: { userId_workspaceId: { userId, workspaceId: id } }
-    });
-
-    res.status(200).json({ message: "Successfully left the workspace" });
-  } catch (error) {
-    res.status(500).json({ error: "Failed to leave workspace" });
-  }
-});
-
 module.exports = router;

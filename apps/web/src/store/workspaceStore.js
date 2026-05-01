@@ -58,19 +58,6 @@ const useWorkspaceStore = create((set, get) => ({
       onlineUsers: state.onlineUsers.filter((u) => u.id !== userId),
     }));
   },
-
-  leaveWorkspace: async (workspaceId) => {
-    try {
-      await api.post(`/workspaces/${workspaceId}/leave`);
-      set((state) => ({
-        workspaces: state.workspaces.filter((w) => w.id !== workspaceId),
-        activeWorkspace: state.activeWorkspace?.id === workspaceId ? null : state.activeWorkspace,
-      }));
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.response?.data?.error };
-    }
-  },
 }));
 
 export default useWorkspaceStore;
