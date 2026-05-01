@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import useWorkspaceStore from "@/store/workspaceStore";
 import useAuthStore from "@/store/authStore";
 
@@ -13,8 +14,20 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ workspace, activeView, onViewChange, onLogout }) {
-  const { workspaces, onlineUsers } = useWorkspaceStore();
+  const { workspaces, onlineUsers, leaveWorkspace } = useWorkspaceStore();
   const { user } = useAuthStore();
+  const router = useRouter();
+
+  const handleLeave = async () => {
+    if (!window.confirm(`Are you sure you want to leave "${workspace?.name}"?`)) return;
+    
+    const res = await leaveWorkspace(workspace.id);
+    if (res.success) {
+      router.push("/dashboard");
+    } else {
+      alert(res.error || "Failed to leave workspace");
+    }
+  };
 
   return (
     <aside className="w-64 bg-sidebar-bg border-r border-border-color flex flex-col h-screen sticky top-0 transition-colors">
@@ -89,9 +102,17 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
         </div>
 
         {/* Theme Settings at bottom of Nav */}
-        <div className="mt-8 px-2">
-          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Settings</p>
-          <ThemeToggle />
+        <div className="mt-8 px-2 space-y-4">
+          <div>
+            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Theme</p>
+            <ThemeToggle />
+          </div>
+          <button
+            onClick={handleLeave}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
+          >
+            🚪 Leave Workspace
+          </button>
         </div>
       </nav>
 
