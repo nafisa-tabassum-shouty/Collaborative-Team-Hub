@@ -109,6 +109,53 @@ const useGoalStore = create((set) => ({
       return { success: false, error: error.response?.data?.error || "Failed to delete goal" };
     }
   },
+
+  // Milestone Actions
+  addMilestone: async (goalId, payload) => {
+    try {
+      const { data } = await api.post(`/goals/${goalId}/milestones`, payload);
+      set((state) => ({
+        goals: state.goals.map((g) => {
+          if (g.id !== goalId) return g;
+          return {
+            ...g,
+            milestones: [...(g.milestones || []), data.milestone],
+            _count: { ...g._count, milestones: (g._count?.milestones || 0) + 1 }
+          };
+        })
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
+  },
+
+  updateMilestone: async (goalId, milestoneId, payload) => {
+    try {
+      const { data } = await api.put(`/goals/${goalId}/milestones/${milestoneId}`, payload);
+      set((state) => ({
+        goals: state.goals.map((g) => {
+          if (g.id !== goalId) return g;
+          return {
+            ...g,
+            milestones: g.milestones.map((m) => (m.id === milestoneId ? data.milestone : m))
+          };
+        })
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
+  },
+
+  addGoalComment: async (goalId, content) => {
+    try {
+      const { data } = await api.post(`/goals/${goalId}/comments`, { content });
+      return { success: true, comment: data.comment };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
+  },
 }));
 
 export default useGoalStore;

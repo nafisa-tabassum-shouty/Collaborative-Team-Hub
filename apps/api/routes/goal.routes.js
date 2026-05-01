@@ -42,6 +42,7 @@ router.get('/', async (req, res) => {
       where: { workspaceId },
       include: {
         owner: { select: { id: true, name: true, avatarUrl: true } },
+        milestones: { orderBy: { createdAt: 'asc' } },
         _count: { select: { milestones: true, actionItems: true } }
       },
       orderBy: { createdAt: 'desc' }
