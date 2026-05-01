@@ -27,12 +27,15 @@ const useActionItemStore = create((set) => ({
 
   // Optimistic update: update local state first, then sync with server
   updateActionItem: async (id, payload) => {
+    const previousItems = [...useActionItemStore.getState().actionItems];
+
     // Optimistically update
     set((state) => ({
       actionItems: state.actionItems.map((item) =>
         item.id === id ? { ...item, ...payload } : item
       ),
     }));
+
     try {
       const { data } = await api.put(`/action-items/${id}`, payload);
       set((state) => ({
@@ -42,8 +45,9 @@ const useActionItemStore = create((set) => ({
       }));
       return { success: true };
     } catch (error) {
-      // Rollback not implemented for brevity; you can refetch on error
-      return { success: false, error: error.response?.data?.error };
+      // Rollback on error
+      set({ actionItems: previousItems });
+      return { success: false, error: error.response?.data?.error || "Failed to update task" };
     }
   },
 
@@ -57,12 +61,20 @@ const useActionItemStore = create((set) => ({
   },
 
   deleteActionItem: async (id) => {
+    const previousItems = [...useActionItemStore.getState().actionItems];
+
+    // Optimistic Update
+    set((state) => ({
+      actionItems: state.actionItems.filter((item) => item.id !== id)
+    }));
+
     try {
       await api.delete(`/action-items/${id}`);
-      set((state) => ({ actionItems: state.actionItems.filter((item) => item.id !== id) }));
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error };
+      // Rollback on error
+      set({ actionItems: previousItems });
+      return { success: false, error: error.response?.data?.error || "Failed to delete task" };
     }
   },
 
