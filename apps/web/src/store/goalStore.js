@@ -48,25 +48,45 @@ const useGoalStore = create((set) => ({
   },
 
   updateGoal: async (goalId, payload) => {
+    const previousGoals = [...useGoalStore.getState().goals];
+    const previousActive = useGoalStore.getState().activeGoal;
+
+    // Optimistic Update
+    set((state) => ({
+      goals: state.goals.map((g) => (g.id === goalId ? { ...g, ...payload } : g)),
+      activeGoal: state.activeGoal?.id === goalId ? { ...state.activeGoal, ...payload } : state.activeGoal
+    }));
+
     try {
       const { data } = await api.put(`/goals/${goalId}`, payload);
+      // Sync with server response
       set((state) => ({
         goals: state.goals.map((g) => (g.id === goalId ? { ...g, ...data.goal } : g)),
         activeGoal: data.goal
       }));
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error };
+      // Rollback on error
+      set({ goals: previousGoals, activeGoal: previousActive });
+      return { success: false, error: error.response?.data?.error || "Failed to update goal" };
     }
   },
 
   deleteGoal: async (goalId) => {
+    const previousGoals = [...useGoalStore.getState().goals];
+
+    // Optimistic Update
+    set((state) => ({
+      goals: state.goals.filter((g) => g.id !== goalId)
+    }));
+
     try {
       await api.delete(`/goals/${goalId}`);
-      set((state) => ({ goals: state.goals.filter((g) => g.id !== goalId) }));
       return { success: true };
     } catch (error) {
-      return { success: false, error: error.response?.data?.error };
+      // Rollback on error
+      set({ goals: previousGoals });
+      return { success: false, error: error.response?.data?.error || "Failed to delete goal" };
     }
   },
 }));
