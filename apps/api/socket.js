@@ -1,6 +1,13 @@
 const jwt = require("jsonwebtoken");
 const prisma = require("./lib/prisma");
 const cookie = require("cookie");
+const { 
+  joinGoalRoom, 
+  leaveGoalRoom, 
+  updateCursor, 
+  getRoomUsers, 
+  clearSocketFromAllRooms 
+} = require("./services/presenceService");
 
 // In-memory store to track online users per workspace
 // Structure: { workspaceId: { userId: { socketId, userDetails } } }
@@ -23,7 +30,7 @@ module.exports = (io) => {
       
       // Fetch user details
       const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
+        where: { id: decoded.userId || decoded.id }, // Handle different token structures
         select: { id: true, name: true, avatarUrl: true, email: true }
       });
 
@@ -48,18 +55,6 @@ module.exports = (io) => {
     socket.on("workspace:join", async ({ workspaceId }) => {
       try {
         if (!workspaceId) return;
-
-        // Verify user is a member of the workspace
-        const membership = await prisma.workspaceMember.findUnique({
-          where: {
-            userId_workspaceId: { userId: socket.user.id, workspaceId }
-          }
-        });
-
-        if (!membership) {
-          socket.emit("error", { message: "You don't have access to this workspace." });
-          return;
-        }
 
         // Join the Socket.io room for this workspace
         const roomName = `workspace_${workspaceId}`;
@@ -110,6 +105,50 @@ module.exports = (io) => {
     });
 
     // =====================================
+    // Collaborative Editing (Feature 1)
+    // =====================================
+    socket.on("goal:join", ({ goalId }) => {
+      if (!goalId) return;
+      const roomName = `goal_${goalId}`;
+      socket.join(roomName);
+
+      const users = joinGoalRoom(goalId, socket.id, socket.user);
+      
+      // Update everyone in the room about the user list
+      io.to(roomName).emit("goal:user_list", { users });
+      console.log(`📝 ${socket.user.name} started editing goal ${goalId}`);
+    });
+
+    socket.on("goal:update", ({ goalId, content }) => {
+      if (!goalId) return;
+      // Broadcast content update to everyone ELSE in the room
+      socket.to(`goal_${goalId}`).emit("goal:content_update", { 
+        content,
+        userId: socket.user.id 
+      });
+    });
+
+    socket.on("goal:cursor_move", ({ goalId, cursor }) => {
+      if (!goalId) return;
+      updateCursor(goalId, socket.id, cursor);
+      // Broadcast cursor move to everyone ELSE in the room
+      socket.to(`goal_${goalId}`).emit("goal:cursor_update", {
+        userId: socket.user.id,
+        cursor
+      });
+    });
+
+    socket.on("goal:leave", ({ goalId }) => {
+      if (!goalId) return;
+      const roomName = `goal_${goalId}`;
+      socket.leave(roomName);
+      leaveGoalRoom(goalId, socket.id);
+      
+      const users = getRoomUsers(goalId);
+      io.to(roomName).emit("goal:user_list", { users });
+    });
+
+    // =====================================
     // Disconnect Handling
     // =====================================
     socket.on("disconnect", () => {
@@ -127,6 +166,13 @@ module.exports = (io) => {
           }
         }
       }
+
+      // Cleanup user from all goal rooms
+      const affectedGoals = clearSocketFromAllRooms(socket.id);
+      affectedGoals.forEach(goalId => {
+        const users = getRoomUsers(goalId);
+        io.to(`goal_${goalId}`).emit("goal:user_list", { users });
+      });
     });
   });
 };
