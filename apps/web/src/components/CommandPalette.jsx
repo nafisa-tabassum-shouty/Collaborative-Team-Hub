@@ -73,13 +73,13 @@ const CommandPalette = () => {
       }
 
       // Sequential shortcuts (G + D, G + W)
-      if (!isOpen) {
+      if (!isOpen && e.key) {
         if (e.key.toLowerCase() === 'g') {
           const handleSecondKey = (e2) => {
-            if (e2.key.toLowerCase() === 'd') {
+            if (e2.key && e2.key.toLowerCase() === 'd') {
               router.push('/dashboard');
               window.removeEventListener('keydown', handleSecondKey);
-            } else if (e2.key.toLowerCase() === 'w') {
+            } else if (e2.key && e2.key.toLowerCase() === 'w') {
               // We could open the palette specifically for workspaces here
               setIsOpen(true);
               setQuery('workspace');

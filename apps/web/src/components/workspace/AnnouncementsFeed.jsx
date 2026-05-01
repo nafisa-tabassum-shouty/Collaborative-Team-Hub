@@ -2,12 +2,24 @@
 import { useEffect, useState } from "react";
 import useAnnouncementStore from "@/store/announcementStore";
 import useAuthStore from "@/store/authStore";
+import { connectSocket, joinWorkspaceRoom, leaveWorkspaceRoom } from "@/lib/socket";
 
 const EMOJIS = ["👍", "❤️", "🔥", "🎉", "😮", "👏"];
 
 export default function AnnouncementsFeed({ workspaceId }) {
-  const { announcements, fetchAnnouncements, createAnnouncement, addReaction, removeReaction, isLoading } =
-    useAnnouncementStore();
+  const { 
+    announcements, 
+    fetchAnnouncements, 
+    createAnnouncement, 
+    addReaction, 
+    removeReaction, 
+    addLiveAnnouncement, 
+    liveUpdateReaction, 
+    liveUpdateComment,
+    fetchComments,
+    addComment,
+    isLoading 
+  } = useAnnouncementStore();
   const { user } = useAuthStore();
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState("");
@@ -15,6 +27,29 @@ export default function AnnouncementsFeed({ workspaceId }) {
 
   useEffect(() => {
     fetchAnnouncements(workspaceId);
+    
+    // Socket setup
+    const socket = connectSocket();
+    joinWorkspaceRoom(workspaceId);
+
+    socket.on("announcement:new", (ann) => {
+      addLiveAnnouncement(ann);
+    });
+
+    socket.on("reaction:update", (data) => {
+      liveUpdateReaction(data);
+    });
+
+    socket.on("comment:new", ({ announcementId, comment }) => {
+      liveUpdateComment(announcementId, comment);
+    });
+
+    return () => {
+      leaveWorkspaceRoom(workspaceId);
+      socket.off("announcement:new");
+      socket.off("reaction:update");
+      socket.off("comment:new");
+    };
   }, [workspaceId]);
 
   const handleCreate = async (e) => {
@@ -113,6 +148,8 @@ export default function AnnouncementsFeed({ workspaceId }) {
               announcement={ann}
               currentUserId={user?.id}
               onReact={(emoji) => handleReaction(ann.id, emoji, ann.reactions)}
+              fetchComments={() => fetchComments(ann.id)}
+              onAddComment={(text) => addComment(ann.id, text)}
             />
           ))}
         </div>
@@ -121,8 +158,25 @@ export default function AnnouncementsFeed({ workspaceId }) {
   );
 }
 
-function AnnouncementCard({ announcement, currentUserId, onReact }) {
+function AnnouncementCard({ announcement, currentUserId, onReact, fetchComments, onAddComment }) {
   const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (showComments && !announcement.comments) {
+      fetchComments();
+    }
+  }, [showComments]);
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim() || isSubmitting) return;
+    setIsSubmitting(true);
+    await onAddComment(commentText);
+    setCommentText("");
+    setIsSubmitting(false);
+  };
 
   return (
     <div
@@ -176,7 +230,9 @@ function AnnouncementCard({ announcement, currentUserId, onReact }) {
           <button className="text-sm px-2.5 py-1 rounded-full border border-border-color text-text-muted hover:text-text-primary hover:border-text-secondary transition-all">
             + 😊
           </button>
-          <div className="absolute bottom-full left-0 mb-2 bg-bg-card border border-border-color shadow-xl rounded-lg p-2 flex gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all transform translate-y-1 group-hover:translate-y-0 z-10">
+          {/* Bridge to prevent gap-triggered mouseleave */}
+          <div className="absolute bottom-full left-0 w-full h-2 hidden group-hover:block" />
+          <div className="absolute bottom-[calc(100%+8px)] left-0 bg-bg-card border border-border-color shadow-xl rounded-lg p-2 flex gap-1 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all transform translate-y-1 group-hover:translate-y-0 z-10">
             {EMOJIS.map((e) => (
               <button
                 key={e}
@@ -192,11 +248,56 @@ function AnnouncementCard({ announcement, currentUserId, onReact }) {
         {/* Comments toggle */}
         <button
           onClick={() => setShowComments(!showComments)}
-          className="ml-auto text-xs text-text-muted hover:text-text-secondary transition-colors"
+          className={`ml-auto text-xs transition-colors flex items-center gap-1 ${
+            showComments ? "text-accent font-semibold" : "text-text-muted hover:text-text-secondary"
+          }`}
         >
           💬 {announcement._count?.comments || 0} comments
         </button>
       </div>
+
+      {/* Comments section */}
+      {showComments && (
+        <div className="mt-6 pt-6 border-t border-border-color space-y-4">
+          {/* Comment list */}
+          <div className="space-y-4">
+            {announcement.comments?.map((comment) => (
+              <div key={comment.id} className="flex gap-3">
+                <div className="w-7 h-7 rounded-full bg-bg-secondary flex items-center justify-center text-[10px] font-bold text-text-secondary flex-shrink-0">
+                  {comment.author?.name?.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 bg-bg-secondary/50 rounded-2xl px-4 py-2">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs font-bold text-text-primary">{comment.author?.name}</span>
+                    <span className="text-[10px] text-text-muted">
+                      {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-text-secondary">{comment.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Comment input */}
+          <form onSubmit={handleAddComment} className="flex items-center gap-2 mt-4">
+            <input
+              type="text"
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="Write a comment..."
+              className="flex-1 bg-input-bg border border-border-color text-text-primary rounded-full px-4 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-accent placeholder:text-text-muted"
+            />
+            <button
+              type="submit"
+              disabled={!commentText.trim() || isSubmitting}
+              className="bg-accent hover:bg-accent-hover disabled:opacity-50 text-white text-[10px] font-bold px-4 py-2 rounded-full transition-colors"
+            >
+              Post
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

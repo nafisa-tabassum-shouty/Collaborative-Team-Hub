@@ -4,32 +4,32 @@
 
 /* ── Light theme (default) ── */
 :root {
-  --bg-primary:    #ffffff;
-  --bg-secondary:  #f4f4f5;
+  --bg-primary:    #f8fafc;
+  --bg-secondary:  #f1f5f9;
   --bg-card:       #ffffff;
-  --border-color:  #e4e4e7;
-  --text-primary:  #09090b;
-  --text-secondary:#71717a;
-  --text-muted:    #a1a1aa;
+  --border-color:  #e2e8f0;
+  --text-primary:  #0f172a;
+  --text-secondary:#475569;
+  --text-muted:    #94a3b8;
   --accent:        #4f46e5;
   --accent-hover:  #4338ca;
-  --sidebar-bg:    #f9f9fb;
-  --input-bg:      #f4f4f5;
+  --sidebar-bg:    #ffffff;
+  --input-bg:      #ffffff;
 }
 
 /* ── Dark theme ── */
 .dark {
-  --bg-primary:    #09090b;
-  --bg-secondary:  #18181b;
-  --bg-card:       #18181b;
-  --border-color:  #27272a;
-  --text-primary:  #fafafa;
-  --text-secondary:#a1a1aa;
-  --text-muted:    #52525b;
+  --bg-primary:    #020617;
+  --bg-secondary:  #0f172a;
+  --bg-card:       #0f172a;
+  --border-color:  #1e293b;
+  --text-primary:  #f8fafc;
+  --text-secondary:#94a3b8;
+  --text-muted:    #475569;
   --accent:        #6366f1;
-  --accent-hover:  #818cf8;
-  --sidebar-bg:    #111113;
-  --input-bg:      #27272a;
+  --accent-hover:  #4f46e5;
+  --sidebar-bg:    #020617;
+  --input-bg:      #1e293b;
 }
 
 /* ── Base styles ── */

@@ -1,49 +1,52 @@
 "use client";
 import { useTheme } from "@/providers/ThemeProvider";
+import { Sun, Moon, Monitor } from "lucide-react";
 
 const THEME_OPTIONS = [
-  { value: "light", label: "Light", icon: "☀️" },
-  { value: "dark",  label: "Dark",  icon: "🌙" },
-  { value: "system",label: "System",icon: "💻" },
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark",  label: "Dark",  icon: Moon },
+  { value: "system",label: "System",icon: Monitor },
 ];
+
 
 export default function ThemeToggle({ compact = false }) {
   const { theme, setTheme } = useTheme();
 
   if (compact) {
-    // Simple icon-only toggle between dark/light
     const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
     return (
       <button
         onClick={() => setTheme(isDark ? "light" : "dark")}
         title="Toggle theme"
-        className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="p-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95 border border-transparent hover:border-border-color"
         aria-label="Toggle dark mode"
       >
-        {isDark ? "☀️" : "🌙"}
+        {isDark ? <Sun size={18} /> : <Moon size={18} />}
       </button>
     );
   }
 
-  // Full 3-way selector
   return (
-    <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-      {THEME_OPTIONS.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => setTheme(opt.value)}
-          title={opt.label}
-          aria-label={`Switch to ${opt.label} theme`}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
-            theme === opt.value
-              ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-              : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          }`}
-        >
-          <span>{opt.icon}</span>
-          <span>{opt.label}</span>
-        </button>
-      ))}
+    <div className="flex items-center gap-1 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl p-1 border border-border-color">
+      {THEME_OPTIONS.map((opt) => {
+        const Icon = opt.icon;
+        return (
+          <button
+            key={opt.value}
+            onClick={() => setTheme(opt.value)}
+            title={opt.label}
+            aria-label={`Switch to ${opt.label} theme`}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              theme === opt.value
+                ? "bg-white dark:bg-gray-700 text-accent dark:text-white shadow-md ring-1 ring-black/5"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
+            }`}
+          >
+            <Icon size={14} />
+            <span>{opt.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

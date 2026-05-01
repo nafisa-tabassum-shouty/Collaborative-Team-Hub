@@ -1,22 +1,23 @@
 "use client";
 import { useEffect } from "react";
 import useOfflineStore from "@/store/offlineStore";
-import toast, { Toaster } from "react-hot-toast";
+import useNotificationStore from "@/store/notificationStore";
 
 export default function OfflineSync() {
   const { setOnlineStatus, processQueue } = useOfflineStore();
+  const { addNotification } = useNotificationStore();
 
   useEffect(() => {
     setOnlineStatus(navigator.onLine);
 
     const handleOnline = () => {
       setOnlineStatus(true);
-      toast.success("Back online! Syncing your changes...", { id: "online-toast" });
+      addNotification("Back online! Syncing your changes...", "success");
       processQueue();
     };
     const handleOffline = () => {
       setOnlineStatus(false);
-      toast.error("You are offline. Changes will be saved locally.", { id: "offline-toast" });
+      addNotification("You are offline. Changes will be saved locally.", "error");
     };
 
     window.addEventListener("online", handleOnline);
@@ -26,7 +27,7 @@ export default function OfflineSync() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [setOnlineStatus, processQueue]);
+  }, [setOnlineStatus, processQueue, addNotification]);
 
-  return <Toaster position="top-right" />;
+  return null;
 }

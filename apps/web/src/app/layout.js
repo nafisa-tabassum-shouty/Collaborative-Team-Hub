@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import ThemeScript from "@/components/ThemeScript";
 import CommandPalette from "@/components/CommandPalette";
 import OfflineSync from "@/components/OfflineSync";
+import ToastContainer from "@/components/ToastContainer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
+            <ToastContainer />
             <OfflineSync />
             {children}
             <CommandPalette />

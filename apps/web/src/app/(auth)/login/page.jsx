@@ -35,13 +35,19 @@ export default function LoginPage() {
       </div>
 
       <div className="w-full max-w-md relative z-0">
-        {/* Logo / Branding */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-accent/20 rotate-3 group hover:rotate-0 transition-transform">
-            <span className="text-white text-3xl font-black">C</span>
+          <div className="relative w-24 h-24 mx-auto mb-6 group">
+            <div className="absolute inset-0 bg-accent/20 rounded-full blur-xl group-hover:bg-accent/30 transition-colors" />
+            <div className="relative w-full h-full bg-white rounded-full p-4 shadow-xl border border-gray-100 flex items-center justify-center transition-transform group-hover:scale-110 duration-500 overflow-hidden">
+              <img 
+                src="/professional_hub_logo_1777675686020.png" 
+                alt="Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
           </div>
-          <h1 className="text-3xl font-black text-text-primary tracking-tight">Welcome back</h1>
-          <p className="text-text-secondary mt-2 font-medium">Sign in to your collaborative workspace</p>
+          <h1 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Welcome back</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium">Sign in to your collaborative workspace</p>
         </div>
 
         {/* Card */}
