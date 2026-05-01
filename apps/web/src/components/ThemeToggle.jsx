@@ -15,7 +15,14 @@ export default function ThemeToggle({ compact = false }) {
   if (compact) {
     const isDark = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches);
     return (
-  return (
+      <button
+        onClick={() => setTheme(isDark ? "light" : "dark")}
+        className="p-2 rounded-lg bg-bg-secondary/50 border border-border-color text-text-muted hover:text-accent transition-colors"
+      >
+        {isDark ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
+    );
+  }
     <div className="flex p-1 bg-bg-secondary/50 backdrop-blur-sm border border-border-color rounded-xl w-full">
       {THEME_OPTIONS.map((option) => {
         const Icon = option.icon;
