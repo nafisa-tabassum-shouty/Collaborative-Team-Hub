@@ -14,20 +14,9 @@ const NAV_ITEMS = [
 ];
 
 export default function Sidebar({ workspace, activeView, onViewChange, onLogout }) {
-  const { workspaces, onlineUsers, leaveWorkspace } = useWorkspaceStore();
+  const { workspaces, onlineUsers } = useWorkspaceStore();
   const { user } = useAuthStore();
   const router = useRouter();
-
-  const handleLeave = async () => {
-    if (!window.confirm(`Are you sure you want to leave "${workspace?.name}"?`)) return;
-    
-    const res = await leaveWorkspace(workspace.id);
-    if (res.success) {
-      router.push("/dashboard");
-    } else {
-      alert(res.error || "Failed to leave workspace");
-    }
-  };
 
   return (
     <aside className="w-64 bg-sidebar-bg border-r border-border-color flex flex-col h-screen sticky top-0 transition-colors">
@@ -108,26 +97,30 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
             <ThemeToggle />
           </div>
           <button
-            onClick={handleLeave}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-500/10 transition-colors"
+            onClick={() => router.push("/dashboard")}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-text-secondary hover:text-accent hover:bg-bg-secondary transition-colors"
           >
-            🚪 Leave Workspace
+            🏠 Exit to Dashboard
           </button>
         </div>
       </nav>
 
       {/* User footer */}
-      <div className="px-4 py-4 border-t border-border-color bg-bg-secondary/50">
+      <div className="px-4 py-4 border-t border-border-color bg-bg-secondary/30 backdrop-blur-sm mt-auto">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-white flex-shrink-0">
+          <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm">
             {user?.name?.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-text-primary truncate">{user?.name}</p>
-            <p className="text-xs text-text-muted truncate">{user?.email}</p>
+            <p className="text-sm font-semibold text-text-primary truncate">{user?.name}</p>
+            <p className="text-[10px] text-text-muted truncate opacity-80">{user?.email}</p>
           </div>
-          <button onClick={onLogout} title="Logout" className="text-text-muted hover:text-red-500 transition-colors text-sm">
-            ⬡
+          <button 
+            onClick={onLogout} 
+            title="Logout" 
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-300"
+          >
+            <span className="text-lg">⬡</span>
           </button>
         </div>
       </div>
