@@ -8,7 +8,6 @@ const THEME_OPTIONS = [
   { value: "system",label: "System",icon: Monitor },
 ];
 
-
 export default function ThemeToggle({ compact = false }) {
   const { theme, setTheme } = useTheme();
 
@@ -23,6 +22,8 @@ export default function ThemeToggle({ compact = false }) {
       </button>
     );
   }
+
+  return (
     <div className="flex p-1 bg-bg-secondary/50 backdrop-blur-sm border border-border-color rounded-xl w-full">
       {THEME_OPTIONS.map((option) => {
         const Icon = option.icon;
