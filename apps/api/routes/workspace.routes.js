@@ -171,6 +171,9 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+const { sendEmailAsync } = require('../utils/email');
+const { invitationTemplate } = require('../utils/emailTemplates');
+
 // POST /api/workspaces/:id/invite - Invite a member
 router.post('/:id/invite', async (req, res) => {
   try {
@@ -209,6 +212,11 @@ router.post('/:id/invite', async (req, res) => {
       return res.status(400).json({ error: "User is already a member of this workspace" });
     }
 
+    // Get workspace details for the email
+    const workspace = await prisma.workspace.findUnique({
+      where: { id }
+    });
+
     // Add user to workspace
     const newMember = await prisma.workspaceMember.create({
       data: {
@@ -221,6 +229,16 @@ router.post('/:id/invite', async (req, res) => {
           select: { id: true, name: true, email: true, avatarUrl: true }
         }
       }
+    });
+
+    // Send invitation email (Async/Non-blocking)
+    const joinUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/workspaces/${id}`;
+    const emailData = invitationTemplate(workspace.name, req.user.name, joinUrl);
+    sendEmailAsync({
+      to: email,
+      subject: emailData.subject,
+      html: emailData.html,
+      text: emailData.text
     });
 
     res.status(201).json({ message: "Member invited successfully", member: newMember });
