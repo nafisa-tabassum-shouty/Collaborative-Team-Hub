@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router({ mergeParams: true });
 const prisma = require('../lib/prisma');
 const { requireAuth } = require('../middleware/auth.middleware');
+const { sendEmailAsync } = require('../utils/email');
+const { mentionTemplate } = require('../utils/emailTemplates');
 
 router.use(requireAuth);
 
@@ -102,16 +104,34 @@ router.post('/', async (req, res) => {
     // Real-time Event: Broadcast new announcement to workspace members
     req.io.to(`workspace_${workspaceId}`).emit("announcement:new", announcement);
 
-    // Optional: Detect @mentions and emit notifications
+    // Email Notifications: Detect @mentions and send emails
     const mentions = content.match(/@(\w+)/g);
     if (mentions) {
-      // Find users by their usernames (requires logic to map username to id, simplified here)
-      // If we had a unique username field, we'd query it. For now, we can emit a general notification event
-      // that the frontend processes or we look up members.
-      req.io.to(`workspace_${workspaceId}`).emit("notification:new", {
-        type: "mention",
-        message: `${req.user.name} mentioned you in an announcement.`,
-        announcementId: announcement.id
+      const mentionedNames = mentions.map(m => m.substring(1));
+      
+      // Find workspace members who match these names
+      const mentionedMembers = await prisma.workspaceMember.findMany({
+        where: {
+          workspaceId,
+          user: {
+            name: { in: mentionedNames }
+          }
+        },
+        include: { user: { select: { email: true, name: true } } }
+      });
+
+      mentionedMembers.forEach(member => {
+        // Don't send email to the author themselves
+        if (member.user.email !== req.user.email) {
+          const contextUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/workspaces/${workspaceId}`;
+          const emailData = mentionTemplate(req.user.name, content, "ANNOUNCEMENT", contextUrl);
+          sendEmailAsync({
+            to: member.user.email,
+            subject: emailData.subject,
+            html: emailData.html,
+            text: emailData.text
+          });
+        }
       });
     }
 
@@ -296,6 +316,41 @@ router.post('/:id/comments', async (req, res) => {
         author: { select: { id: true, name: true, avatarUrl: true } }
       }
     });
+
+    // Real-time Event: Broadcast new comment
+    req.io.to(`workspace_${announcement.workspaceId}`).emit("comment:new", {
+      announcementId: id,
+      comment
+    });
+
+    // Email Notifications: Detect @mentions and send emails
+    const mentions = content.match(/@(\w+)/g);
+    if (mentions) {
+      const mentionedNames = mentions.map(m => m.substring(1));
+      
+      const mentionedMembers = await prisma.workspaceMember.findMany({
+        where: {
+          workspaceId: announcement.workspaceId,
+          user: {
+            name: { in: mentionedNames }
+          }
+        },
+        include: { user: { select: { email: true, name: true } } }
+      });
+
+      mentionedMembers.forEach(member => {
+        if (member.user.email !== req.user.email) {
+          const contextUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/workspaces/${announcement.workspaceId}`;
+          const emailData = mentionTemplate(req.user.name, content, "COMMENT", contextUrl);
+          sendEmailAsync({
+            to: member.user.email,
+            subject: emailData.subject,
+            html: emailData.html,
+            text: emailData.text
+          });
+        }
+      });
+    }
 
     res.status(201).json({ message: "Comment added", comment });
   } catch (error) {
