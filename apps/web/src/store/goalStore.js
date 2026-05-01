@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import api from "@/lib/api";
+import useOfflineStore from "./offlineStore";
 
 const useGoalStore = create((set) => ({
   goals: [],
@@ -38,6 +39,25 @@ const useGoalStore = create((set) => ({
   },
 
   createGoal: async (workspaceId, payload) => {
+    const { isOnline, addToQueue } = useOfflineStore.getState();
+
+    if (!isOnline) {
+      // Offline implementation
+      const tempId = `temp-${Date.now()}`;
+      const optimisticGoal = { ...payload, id: tempId, status: "OPEN", createdAt: new Date().toISOString() };
+      
+      set((state) => ({ goals: [optimisticGoal, ...state.goals] }));
+      
+      addToQueue({
+        action: "CREATE_GOAL",
+        method: "POST",
+        endpoint: `/workspaces/${workspaceId}/goals`,
+        payload
+      });
+
+      return { success: true, offline: true };
+    }
+
     try {
       const { data } = await api.post(`/workspaces/${workspaceId}/goals`, payload);
       set((state) => ({ goals: [data.goal, ...state.goals] }));

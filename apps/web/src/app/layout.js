@@ -4,6 +4,7 @@ import AuthProvider from "@/providers/AuthProvider";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import ThemeScript from "@/components/ThemeScript";
 import CommandPalette from "@/components/CommandPalette";
+import OfflineSync from "@/components/OfflineSync";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,9 +18,6 @@ export const metadata = {
     statusBarStyle: "default",
     title: "Team Hub",
   },
-  formatDetection: {
-    telephone: false,
-  },
 };
 
 export default function RootLayout({ children }) {
@@ -31,6 +29,7 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
+            <OfflineSync />
             {children}
             <CommandPalette />
           </AuthProvider>
