@@ -1,13 +1,177 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum Status {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+// Models
+model User {
+  id            String            @id @default(uuid())
+  email         String            @unique
+  password      String
+  name          String
+  avatarUrl     String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  workspaces    WorkspaceMember[]
+  goals         Goal[]            // Goals owned by user
+  actionItems   ActionItem[]      // Action items assigned to user
+  announcements Announcement[]    // Announcements posted by user
+  comments      Comment[]
+  reactions     Reaction[]
+  auditLogs     AuditLog[]
+}
+
+model Workspace {
+  id            String            @id @default(uuid())
+  name          String
+  description   String?
+  accentColor   String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  
+  members       WorkspaceMember[]
+  goals         Goal[]
+  announcements Announcement[]
+  auditLogs     AuditLog[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        Role      @default(MEMBER)
+  joinedAt    DateTime  @default(now())
+  
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+}
+
+model Goal {
+  id          String       @id @default(uuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      Status       @default(TODO)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  
+  workspaceId String
+  workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  ownerId     String
+  owner       User         @relation(fields: [ownerId], references: [id])
+  
+  milestones  Milestone[]
+  actionItems ActionItem[]
+  comments    Comment[]
+}
+
+model Milestone {
+  id          String   @id @default(uuid())
+  title       String
+  progress    Int      @default(0) // 0 to 100 percentage
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  goalId      String
+  goal        Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+}
+
+model ActionItem {
+  id          String    @id @default(uuid())
+  title       String
+  priority    Priority  @default(MEDIUM)
+  dueDate     DateTime?
+  status      Status    @default(TODO)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  goalId      String
+  goal        Goal      @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  assigneeId  String?
+  assignee    User?     @relation(fields: [assigneeId], references: [id])
+}
+
+model Announcement {
+  id          String      @id @default(uuid())
+  content     String      @db.Text
+  isPinned    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  workspaceId String
+  workspace   Workspace   @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User        @relation(fields: [authorId], references: [id])
+  
+  reactions   Reaction[]
+  comments    Comment[]
+}
+
+model Comment {
+  id             String        @id @default(uuid())
+  content        String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  authorId       String
+  author         User          @relation(fields: [authorId], references: [id])
+  
+  goalId         String?
+  goal           Goal?         @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  
+  announcementId String?
+  announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+}
+
+model Reaction {
+  id             String       @id @default(uuid())
+  emoji          String
+  createdAt      DateTime     @default(now())
+  
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, announcementId, emoji]) // One specific emoji per user per announcement
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  action      String    // e.g., "CREATED_GOAL", "UPDATED_WORKSPACE"
+  entity      String    // e.g., "Goal", "Workspace"
+  entityId    String
+  details     String?   // JSON string or Text
+  createdAt   DateTime  @default(now())
+  
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
 }
