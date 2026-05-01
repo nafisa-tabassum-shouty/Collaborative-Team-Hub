@@ -37,6 +37,8 @@ Important:
 Goal:
 I want a clean working Prisma setup without version conflicts so I can continue backend development.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 2
@@ -90,6 +92,8 @@ Important:
 Goal:
 I want a working backend foundation so I can continue building features step by step.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 3
@@ -133,6 +137,8 @@ Important:
 
 Goal:
 I want a complete working authentication system (register, login, protected routes, logout, refresh token).
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
@@ -184,6 +190,8 @@ Important:
 
 Goal:
 I want a fully working workspace system that supports multi-workspace collaboration with roles and access control.
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
@@ -238,6 +246,8 @@ Important:
 Goal:
 I want a fully functional goal tracking system with milestones and progress tracking.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 6
@@ -290,6 +300,8 @@ Important:
 - Keep security consistent with existing system
 
 I want a fully functional Kanban-style task management system integrated with Goals and Workspaces.
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
@@ -383,6 +395,8 @@ Please help me design and implement a production-ready backend system.
 
 I want a real-world team collaboration feed system like Slack/Notion announcements with reactions, comments, and admin controls.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 8
@@ -467,6 +481,8 @@ Example events:
 
 Goal:
 I want a production-grade real-time collaboration system like Slack/Notion where everything updates instantly across users.
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
@@ -588,6 +604,8 @@ Create stores for:
 Goal:
 I want a fully structured, production-ready Next.js frontend that integrates with my backend and behaves like a real collaborative SaaS platform (similar to Slack/Notion/Trello hybrid).
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 10
@@ -680,6 +698,8 @@ Give me a script to explain:
 Goal:
 I want to submit a polished, production-ready project that stands out in a technical interview.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 11
@@ -741,6 +761,8 @@ Successfully implemented a **Production-Ready Dark/Light Theme System** in the N
 *   **Manual Toggle:** Use the theme toggle button located at the bottom of the Sidebar or in the Dashboard header.
 *   **System Preference:** By default, it follows your OS color scheme.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 12
@@ -759,6 +781,8 @@ Requirements:
 
 Do not break existing APIs.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 13
@@ -776,6 +800,8 @@ Requirements:
 - Integrate with existing Sidebar routes
 
 No backend changes required.
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
@@ -799,6 +825,8 @@ Requirements:
 
 Keep structure scalable for CI/CD.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 15
@@ -818,6 +846,8 @@ Requirements:
 
 Keep it production-grade and clean.
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 ### Prompt 16
@@ -833,6 +863,8 @@ Requirements:
 - Ensure no break in Socket.io realtime features
 
 Must work on mobile + desktop.
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
@@ -941,6 +973,8 @@ Design expectations:
 - Store minimal state in memory
 - Persist final updates to PostgreSQL efficiently (not every keystroke)
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 # FEATURE 2: Optimistic UI System
@@ -962,6 +996,8 @@ Design expectations:
   - error rollback handler
 - Handle race conditions
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 # FEATURE 3: Offline Support (PWA + Queue System)
@@ -981,6 +1017,8 @@ Design expectations:
   - POST_COMMENT
 - Sync strategy on reconnect with retry logic
 - Handle conflict resolution when server state differs
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
@@ -1007,6 +1045,8 @@ Design expectations:
 Bonus:
 - Allow future custom roles expansion
 
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
 ---
 
 # FEATURE 5: Audit Log System (Immutable Activity Timeline)
@@ -1032,6 +1072,8 @@ Design expectations:
   - Timeline UI
   - Filter by user, action type, date
   - Export CSV feature
+
+**Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
 ---
 
