@@ -5,6 +5,16 @@ const useGoalStore = create((set) => ({
   goals: [],
   activeGoal: null,
   isLoading: false,
+  // Collaboration state
+  collaborators: [],
+  remoteCursors: {}, // { userId: { x, y } }
+  liveDescription: "",
+
+  setCollaborators: (users) => set({ collaborators: users }),
+  setRemoteCursor: (userId, cursor) => set((state) => ({
+    remoteCursors: { ...state.remoteCursors, [userId]: cursor }
+  })),
+  setLiveDescription: (content) => set({ liveDescription: content }),
 
   fetchGoals: async (workspaceId) => {
     set({ isLoading: true });
@@ -19,7 +29,10 @@ const useGoalStore = create((set) => ({
   fetchGoalById: async (goalId) => {
     try {
       const { data } = await api.get(`/goals/${goalId}`);
-      set({ activeGoal: data });
+      set({ 
+        activeGoal: data,
+        liveDescription: data.description || ""
+      });
       return data;
     } catch (_) {}
   },
@@ -39,6 +52,7 @@ const useGoalStore = create((set) => ({
       const { data } = await api.put(`/goals/${goalId}`, payload);
       set((state) => ({
         goals: state.goals.map((g) => (g.id === goalId ? { ...g, ...data.goal } : g)),
+        activeGoal: data.goal
       }));
       return { success: true };
     } catch (error) {
