@@ -976,6 +976,13 @@ Design expectations:
 
 **Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
+### Results:
+- **Presence Service:** Created `apps/api/services/presenceService.js` to manage in-memory user sessions and cursors.
+- **Socket Integration:** Updated `apps/api/socket.js` to handle real-time collaboration events (`goal:join`, `goal:update`, `goal:cursor-move`).
+- **Collaborative Editor:** Built `apps/web/src/components/workspace/CollaborativeEditor.jsx` with debounced auto-save (2s) and presence visualization.
+- **State Management:** Extended `apps/web/src/store/goalStore.js` to track active collaborators and remote cursor positions.
+
+
 ---
 
 # FEATURE 2: Optimistic UI System
@@ -999,6 +1006,12 @@ Design expectations:
 
 **Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
+### Results:
+- **Global Optimistic Logic:** Implemented in `apps/web/src/store/goalStore.js` and `apps/web/src/store/actionItemStore.js`.
+- **Rollback Mechanism:** Developed an error-handling layer that restores the previous state using `getState()` if an API request fails.
+- **UX Improvement:** User actions (like updating a goal or moving a task) are reflected in the UI instantly, providing a snappy experience.
+
+
 ---
 
 # FEATURE 3: Offline Support (PWA + Queue System)
@@ -1020,6 +1033,12 @@ Design expectations:
 - Handle conflict resolution when server state differs
 
 **Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
+### Results:
+- **Offline Store:** Created `apps/web/src/store/offlineStore.js` using Zustand's `persist` middleware to manage a durable action queue.
+- **Sync Engine:** Implemented a background processor in `apps/web/src/components/OfflineSync.jsx` that automatically retries queued actions upon reconnection.
+- **Network Awareness:** Updated `apps/web/src/app/layout.js` with network event listeners and toast notifications for connectivity changes.
+
 
 ---
 
@@ -1048,6 +1067,13 @@ Bonus:
 
 **Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
 
+### Results:
+- **Permission Matrix:** Defined a granular RBAC matrix in `apps/api/utils/permissions.js`.
+- **RBAC Middleware:** Created `apps/api/middleware/rbac.middleware.js` to enforce server-side authorization checks for administrative actions.
+- **Protected Routes:** Applied `requirePermission` to workspace invitation and deletion routes in `apps/api/routes/workspace.routes.js`.
+- **Frontend Authorization:** Built the `apps/web/src/hooks/usePermission.js` hook for conditional UI rendering based on the user's role.
+
+
 ---
 
 # FEATURE 5: Audit Log System (Immutable Activity Timeline)
@@ -1075,6 +1101,13 @@ Design expectations:
   - Export CSV feature
 
 **Commit Instruction:** Follow the Expert Git Workflow (Prompt 17) to commit these changes separately in a dedicated feature branch with a concise, descriptive message.
+
+### Results:
+- **Audit Service:** Developed `apps/api/services/auditService.js` for asynchronous, non-blocking activity logging.
+- **Automated Logging:** Integrated logging triggers into `apps/api/routes/goal.routes.js` and `apps/api/routes/action-item.routes.js`.
+- **Timeline UI:** Built `apps/web/src/components/workspace/AuditLogTimeline.jsx` to display a filterable history of all workspace changes.
+- **CSV Export:** Implemented client-side CSV generation in `apps/web/src/store/auditStore.js` for reporting and documentation.
+
 
 ---
 
