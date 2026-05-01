@@ -898,3 +898,157 @@ I want to implement 5 advanced features in a structured, scalable, and interview
 - Timeline UI with advanced filtering and CSV export.
 
 **Status:** ⏳ Pending Implementation
+
+---
+
+I am building a production-grade Collaborative Team Hub using a Next.js + Express + Prisma + Socket.io monorepo architecture.
+
+Now I want to implement 5 advanced features in a structured, scalable, and interview-ready way.
+
+Please act as a senior staff-level full-stack architect and provide:
+
+1. System design overview
+2. Backend + frontend architecture changes
+3. Database considerations (Prisma updates if needed)
+4. Socket.io real-time design (if applicable)
+5. API endpoints design
+6. State management changes (Zustand)
+7. Step-by-step implementation plan
+8. Folder/file structure updates
+9. Potential edge cases & performance concerns
+
+Then implement each feature one by one in a clean, production-ready manner.
+
+---
+
+# FEATURE 1: Real-time Collaborative Editing (Google Docs style)
+
+Requirements:
+- Multiple users can edit a Goal description simultaneously
+- Show live cursors per user
+- Show user presence in the editor
+- Changes must sync in real time using Socket.io
+- Conflict resolution strategy (prefer last-write-wins or operational update model)
+- Optimize for low latency updates
+- Ensure backend does NOT get overloaded (debounce or batching updates)
+
+Design expectations:
+- Use Socket rooms per goalId
+- Emit events like:
+  - goal:join
+  - goal:update
+  - goal:cursor-move
+- Store minimal state in memory
+- Persist final updates to PostgreSQL efficiently (not every keystroke)
+
+---
+
+# FEATURE 2: Optimistic UI System
+
+Requirements:
+- All create/update/delete actions should reflect instantly in UI
+- Rollback UI changes if API fails
+- Implement globally reusable optimistic handler
+- Must work for:
+  - Goals
+  - Action Items (Kanban board)
+  - Announcements reactions/comments
+
+Design expectations:
+- Zustand middleware or utility hook (useOptimisticUpdate)
+- Track:
+  - previous state
+  - pending state
+  - error rollback handler
+- Handle race conditions
+
+---
+
+# FEATURE 3: Offline Support (PWA + Queue System)
+
+Requirements:
+- App should work offline (at least read-only mode)
+- Store API responses in localStorage or IndexedDB
+- Queue user actions when offline
+- Sync queued actions when reconnecting
+
+Design expectations:
+- Create offlineQueue system
+- Detect network status (navigator.onLine + event listeners)
+- Store pending mutations:
+  - CREATE_GOAL
+  - UPDATE_ACTION_ITEM
+  - POST_COMMENT
+- Sync strategy on reconnect with retry logic
+- Handle conflict resolution when server state differs
+
+---
+
+# FEATURE 4: Advanced RBAC (Role-Based Access Control Matrix)
+
+Requirements:
+- Implement granular permission system beyond ADMIN/MEMBER
+
+Define permissions:
+- create_goal
+- update_goal
+- delete_goal
+- post_announcement
+- invite_member
+- manage_workspace_settings
+
+Design expectations:
+- Extend Prisma schema OR create permission mapping layer
+- Role → Permission mapping system
+- Middleware: requirePermission(action)
+- Frontend UI should hide disabled actions
+- API must enforce strict backend authorization (not just UI)
+
+Bonus:
+- Allow future custom roles expansion
+
+---
+
+# FEATURE 5: Audit Log System (Immutable Activity Timeline)
+
+Requirements:
+- Track ALL important actions inside workspace
+- Immutable logs (cannot be edited or deleted)
+- Must include:
+  - who did action
+  - what action
+  - entity type (goal, workspace, action item, announcement)
+  - timestamp
+  - metadata (JSON details)
+
+Design expectations:
+- Prisma AuditLog model enhancement if needed
+- Auto-log middleware or service wrapper
+- Capture:
+  - CREATE / UPDATE / DELETE actions
+- Build API:
+  - GET /audit-logs?workspaceId=
+- Frontend:
+  - Timeline UI
+  - Filter by user, action type, date
+  - Export CSV feature
+
+---
+
+# FINAL OUTPUT REQUIREMENTS
+
+For each feature:
+- Provide architecture first
+- Then implementation steps
+- Then code structure
+- Then example code snippets
+- Then testing approach
+- Then potential edge cases
+
+Ensure:
+- Production-ready quality
+- Clean code separation
+- Scalable monorepo structure
+- Interview-level explanation quality
+
+Do NOT skip design explanation before coding.
