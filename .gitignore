@@ -4,3 +4,8 @@ node_modules
 dist
 .DS_Store
 *.log
+
+my documents/railway_env_guide.md
+apps/web/public/sw.js
+apps/web/public/workbox-*.js
+apps/web/public/swe-worker-*.js
