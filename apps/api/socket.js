@@ -81,7 +81,9 @@ module.exports = (io) => {
         socket.activeWorkspaces = socket.activeWorkspaces || new Set();
         socket.activeWorkspaces.add(workspaceId);
 
-        console.log(`👤 ${socket.user.name} joined room ${roomName}`);
+        console.log(`👤 User joined workspace: ${socket.user.name} (ID: ${socket.user.id})`);
+        console.log(`   Workspace ID: ${workspaceId}`);
+        console.log(`   Current Users Count: ${activeUsersList.length}`);
       } catch (err) {
         console.error("Join workspace error:", err);
       }
