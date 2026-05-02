@@ -1128,3 +1128,18 @@ Ensure:
 - Interview-level explanation quality
 
 Do NOT skip design explanation before coding.
+
+---
+
+### Prompt 18 (Automated Atomic Git Commit Strategy)
+I need a precise and automated guide for organizing my Git commits according to best practices. I have recently added several advanced features to my project, and each feature may contain sub-features. I want every single sub-feature to be committed separately, with a clear, descriptive commit message that accurately reflects what was implemented. 
+
+**Requirements:**
+- Commit each sub-feature separately following the Expert Git Workflow (Prompt 17).
+- Use meaningful, descriptive commit messages (Conventional Commits).
+- Ensure each commit is atomic and ties directly to a specific sub-feature or prompt.
+- Provide a step-by-step automated guide to commit only relevant files and sections without manual intervention.
+- Maintain a clean, organized, and descriptive commit history.
+
+**Goal:**
+Fully automate the commit process for complex features, ensuring each change is tracked as an independent, atomic unit according to best Git practices.
