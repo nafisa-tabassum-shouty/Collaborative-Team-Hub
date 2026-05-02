@@ -143,6 +143,20 @@ router.post('/', async (req, res) => {
       details: { title: actionItem.title }
     });
 
+    // Notify assignee if someone else assigns a task to them
+    if (assigneeId && assigneeId !== req.user.id) {
+      const contextUrl = `/workspaces/${goal.workspaceId}`;
+      const notification = await prisma.notification.create({
+        data: {
+          type: "ASSIGNMENT",
+          content: `${req.user.name} assigned a new task to you: "${actionItem.title}"`,
+          link: contextUrl,
+          userId: assigneeId
+        }
+      });
+      req.io.to(`workspace_${goal.workspaceId}`).emit("notification:new", notification);
+    }
+
     res.status(201).json({ message: "Action item created", actionItem });
   } catch (error) {
     res.status(500).json({ error: "Failed to create action item" });
@@ -204,6 +218,20 @@ router.put('/:id', async (req, res) => {
       userId: req.user.id,
       details: { title: updatedItem.title, status: updatedItem.status }
     });
+
+    // Notify new assignee if changed and not self-assigned
+    if (assigneeId && assigneeId !== actionItem.assigneeId && assigneeId !== req.user.id) {
+      const contextUrl = `/workspaces/${actionItem.goal.workspaceId}`;
+      const notification = await prisma.notification.create({
+        data: {
+          type: "ASSIGNMENT",
+          content: `${req.user.name} assigned a task to you: "${updatedItem.title}"`,
+          link: contextUrl,
+          userId: assigneeId
+        }
+      });
+      req.io.to(`workspace_${actionItem.goal.workspaceId}`).emit("notification:new", notification);
+    }
 
     // Real-time Event: Kanban board update
     req.io.to(`workspace_${actionItem.goal.workspaceId}`).emit("actionItem:update", {
