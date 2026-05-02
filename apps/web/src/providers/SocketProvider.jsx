@@ -4,6 +4,8 @@ import { getSocket, connectSocket, joinWorkspaceRoom, leaveWorkspaceRoom } from 
 import useWorkspaceStore from "@/store/workspaceStore";
 import useActionItemStore from "@/store/actionItemStore";
 import useAnnouncementStore from "@/store/announcementStore";
+import useNotificationStore from "@/store/notificationStore";
+import useAuthStore from "@/store/authStore";
 
 export default function SocketProvider({ children, workspaceId }) {
   const { addOnlineUser, removeOnlineUser, setOnlineUsers } = useWorkspaceStore();
@@ -34,6 +36,14 @@ export default function SocketProvider({ children, workspaceId }) {
     socket.on("announcement:new", (announcement) => addLiveAnnouncement(announcement));
     socket.on("reaction:update", (payload) => liveUpdateReaction(payload));
 
+    socket.on("notification:new", (notification) => {
+      // Only add if it's meant for the current user
+      if (notification.userId === useAuthStore.getState().user?.id) {
+        console.log(`🔔 [Socket] New notification:`, notification.content);
+        useNotificationStore.getState().addLiveNotification(notification);
+      }
+    });
+
     // Join workspace room AFTER listeners are set
     const joinRoom = () => {
       console.log(`🚀 [Socket] Joining workspace room: ${workspaceId} with socket ID: ${socket.id}`);
@@ -59,6 +69,7 @@ export default function SocketProvider({ children, workspaceId }) {
       socket.off("actionItem:update");
       socket.off("announcement:new");
       socket.off("reaction:update");
+      socket.off("notification:new");
     };
   }, [workspaceId]);
 
