@@ -2,6 +2,8 @@
 
 A production-ready, full-stack team collaboration platform built as a technical assessment. It combines the best features of **Slack**, **Notion**, and **Trello** into a single real-time workspace with advanced enterprise-grade features.
 
+**🚀 [Live Demo](https://web-production-c04a9.up.railway.app)**
+
 ![Tech Stack](https://img.shields.io/badge/Next.js-14-black?logo=next.js) ![Express](https://img.shields.io/badge/Express-4-green?logo=express) ![Prisma](https://img.shields.io/badge/Prisma-5.22-blue?logo=prisma) ![Socket.io](https://img.shields.io/badge/Socket.io-4-white?logo=socket.io) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)
 
 ---
@@ -80,7 +82,7 @@ A complete, tamper-proof history of all workspace changes.
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/YOUR_USERNAME/collaborative-team-hub.git
+git clone https://github.com/nafisa-tabassum-shouty/Collaborative-Team-Hub.git
 npm install
 ```
 
