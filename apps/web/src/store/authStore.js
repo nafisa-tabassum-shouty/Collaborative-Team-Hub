@@ -45,12 +45,13 @@ const useAuthStore = create(
       },
 
       fetchMe: async () => {
+        set({ isLoading: true });
         try {
           const { data } = await api.get("/auth/me");
-          set({ user: data.user, isAuthenticated: true });
+          set({ user: data.user, isAuthenticated: true, isLoading: false });
           connectSocket();
         } catch (_) {
-          set({ user: null, isAuthenticated: false });
+          set({ user: null, isAuthenticated: false, isLoading: false });
         }
       },
     }),

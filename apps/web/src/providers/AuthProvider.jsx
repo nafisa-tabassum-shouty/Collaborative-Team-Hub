@@ -6,23 +6,36 @@ import useAuthStore from "@/store/authStore";
 const PUBLIC_PATHS = ["/login", "/register"];
 
 export default function AuthProvider({ children }) {
-  const { isAuthenticated, fetchMe } = useAuthStore();
+  const { isAuthenticated, fetchMe, isLoading } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     fetchMe();
-  }, []);
+  }, [fetchMe]);
 
   useEffect(() => {
+    if (isLoading) return;
+
     const isPublic = PUBLIC_PATHS.includes(pathname);
     if (!isAuthenticated && !isPublic) {
-      router.push("/login");
+      router.replace("/login");
     }
     if (isAuthenticated && isPublic) {
-      router.push("/dashboard");
+      router.replace("/dashboard");
     }
-  }, [isAuthenticated, pathname]);
+  }, [isAuthenticated, pathname, isLoading, router]);
+
+  if (isLoading && !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-bg-primary flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <p className="text-text-secondary text-xs font-medium">Verifying session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return children;
 }

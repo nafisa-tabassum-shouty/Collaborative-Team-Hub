@@ -7,13 +7,7 @@ export default function HomePage() {
   const { isAuthenticated } = useAuthStore();
   const router = useRouter();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace("/dashboard");
-    } else {
-      router.replace("/login");
-    }
-  }, [isAuthenticated]);
+  return null;
 
   return null;
 }

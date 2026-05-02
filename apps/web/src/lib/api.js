@@ -20,9 +20,16 @@ api.interceptors.response.use(
         await api.post("/auth/refresh");
         return api(originalRequest);
       } catch (refreshError) {
-        // Redirect to login if refresh also fails
+        // Redirect to login if refresh also fails, BUT only if we aren't already on a public page
+        // to avoid infinite reload loops
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          const publicPaths = ["/login", "/register"];
+          const isPublic = publicPaths.includes(window.location.pathname);
+          
+          // Only hard redirect if not on a public page
+          if (!isPublic) {
+            window.location.href = "/login";
+          }
         }
       }
     }
