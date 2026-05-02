@@ -2,9 +2,11 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import useWorkspaceStore from "@/store/workspaceStore";
+import useAuthStore from "@/store/authStore";
 
 export default function MembersPanel({ workspaceId }) {
   const { onlineUsers } = useWorkspaceStore();
+  const { user: currentUser } = useAuthStore();
   const [members, setMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -21,6 +23,9 @@ export default function MembersPanel({ workspaceId }) {
     } catch (_) {}
     finally { setIsLoading(false); }
   };
+
+  const currentMembership = members.find(m => m.userId === currentUser?.id);
+  const isAdmin = currentMembership?.role === "ADMIN";
 
   const handleInvite = async (e) => {
     e.preventDefault();
@@ -47,50 +52,52 @@ export default function MembersPanel({ workspaceId }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Invite Section */}
-        <div className="lg:col-span-1">
-          <div className="bg-bg-card border border-border-color rounded-2xl p-6 shadow-sm sticky top-6">
-            <div className="flex items-center gap-2 mb-4">
-              <span className="text-xl">✉️</span>
-              <h3 className="font-bold text-text-primary">Invite Member</h3>
+      <div className={`grid grid-cols-1 ${isAdmin ? "lg:grid-cols-3" : "lg:grid-cols-2"} gap-8`}>
+        {/* Left: Invite Section (ADMIN ONLY) */}
+        {isAdmin && (
+          <div className="lg:col-span-1">
+            <div className="bg-bg-card border border-border-color rounded-2xl p-6 shadow-sm sticky top-6">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-xl">✉️</span>
+                <h3 className="font-bold text-text-primary">Invite Member</h3>
+              </div>
+              <p className="text-xs text-text-secondary mb-6 leading-relaxed">
+                Enter the email address of your colleague to invite them to this workspace. They will receive an email with instructions.
+              </p>
+              <form onSubmit={handleInvite} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase text-text-muted ml-1">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="name@company.com"
+                    className="w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-text-muted transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={inviteStatus?.type === "loading"}
+                  className="w-full bg-accent hover:bg-accent-hover disabled:opacity-50 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-md active:scale-95"
+                >
+                  {inviteStatus?.type === "loading" ? "Sending..." : "Send Invitation"}
+                </button>
+              </form>
+              {inviteStatus && (
+                <div className={`mt-4 p-3 rounded-xl text-xs font-medium animate-in fade-in slide-in-from-top-2 ${
+                  inviteStatus.type === "success" ? "bg-green-500/10 text-green-600 dark:text-green-400" : 
+                  inviteStatus.type === "error" ? "bg-red-500/10 text-red-500" : "bg-bg-secondary text-text-secondary"
+                }`}>
+                  {inviteStatus.message}
+                </div>
+              )}
             </div>
-            <p className="text-xs text-text-secondary mb-6 leading-relaxed">
-              Enter the email address of your colleague to invite them to this workspace. They will receive an email with instructions.
-            </p>
-            <form onSubmit={handleInvite} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-text-muted ml-1">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="name@company.com"
-                  className="w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent placeholder:text-text-muted transition-all"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={inviteStatus?.type === "loading"}
-                className="w-full bg-accent hover:bg-accent-hover disabled:opacity-50 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-md active:scale-95"
-              >
-                {inviteStatus?.type === "loading" ? "Sending..." : "Send Invitation"}
-              </button>
-            </form>
-            {inviteStatus && (
-              <div className={`mt-4 p-3 rounded-xl text-xs font-medium animate-in fade-in slide-in-from-top-2 ${
-                inviteStatus.type === "success" ? "bg-green-500/10 text-green-600 dark:text-green-400" : 
-                inviteStatus.type === "error" ? "bg-red-500/10 text-red-500" : "bg-bg-secondary text-text-secondary"
-              }`}>
-                {inviteStatus.message}
-              </div>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Right: Members List */}
-        <div className="lg:col-span-2">
+        <div className={isAdmin ? "lg:col-span-2" : "lg:col-span-2"}>
           <div className="bg-bg-card border border-border-color rounded-2xl overflow-hidden shadow-sm">
              <div className="p-4 border-b border-border-color bg-bg-secondary/20 flex justify-between items-center">
                 <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Active Members</span>
@@ -133,7 +140,7 @@ export default function MembersPanel({ workspaceId }) {
                        <div className="flex-1 min-w-0">
                          <div className="flex items-center gap-2">
                            <p className="text-sm font-bold text-text-primary truncate">{member.user?.name}</p>
-                           {member.user?.id === useWorkspaceStore.getState().user?.id && (
+                           {member.user?.id === currentUser?.id && (
                              <span className="text-[8px] font-black bg-bg-secondary text-text-muted px-1.5 py-0.5 rounded uppercase tracking-tighter">You</span>
                            )}
                          </div>
