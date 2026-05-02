@@ -10,16 +10,19 @@ const ToastContainer = () => {
       {notifications.map((n) => (
         <div
           key={n.id}
-          className={`pointer-events-auto min-w-[300px] p-4 rounded-2xl shadow-2xl border flex items-center justify-between transition-all animate-in slide-in-from-right duration-300 ${
-            n.type === "error"
-              ? "bg-red-50 border-red-200 text-red-800 dark:bg-red-900/30 dark:border-red-800 dark:text-red-300"
-              : "bg-white border-gray-100 text-gray-800 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+          className={`pointer-events-auto min-w-[320px] max-w-[400px] p-4 rounded-2xl shadow-2xl border flex items-start gap-3 transition-all animate-in slide-in-from-right duration-500 ${
+            n.isRead 
+              ? "bg-bg-card/80 backdrop-blur-md border-border-color text-text-secondary"
+              : "bg-accent/10 backdrop-blur-md border-accent/20 text-text-primary shadow-accent/5"
           }`}
         >
-          <p className="text-sm font-semibold">{n.message}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-accent mb-1 uppercase tracking-wider">{n.type || 'Notification'}</p>
+            <p className="text-sm font-medium leading-relaxed">{n.content || n.message}</p>
+          </div>
           <button
             onClick={() => removeNotification(n.id)}
-            className="ml-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-bg-secondary text-text-muted hover:text-text-primary transition-colors flex-shrink-0"
           >
             ×
           </button>
