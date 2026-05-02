@@ -71,13 +71,12 @@ Build a **Collaborative Team Hub** — a full-stack web application where teams 
 
 ---
 
-## 🔥 Advanced Features (Choose any 2)
-*(State your choices clearly in the README)*
+## 🌟 Advanced Features (All Implemented)
 1. **Real-time collaborative editing:** Multiple users edit a goal description simultaneously with live cursors
-2. **Optimistic UI:** Actions reflect instantly before server confirmation; roll back gracefully on error *(Chosen)*
+2. **Optimistic UI:** Actions reflect instantly before server confirmation; roll back gracefully on error
 3. **Offline support:** Cache data locally; queue writes while offline and sync on reconnect
 4. **Advanced RBAC:** Permission matrix controlling who can create goals, post announcements, and invite members
-5. **Audit log:** Immutable log of all workspace changes; filterable timeline UI with CSV export *(Chosen)*
+5. **Audit log:** Immutable log of all workspace changes; filterable timeline UI with CSV export
 
 ## 🌟 Bonus Features (Extra Credit)
 - **Dark / light theme:** System preference detection

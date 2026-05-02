@@ -2,7 +2,8 @@
 
 A production-ready, full-stack team collaboration platform built as a technical assessment. It combines the best features of **Slack**, **Notion**, and **Trello** into a single real-time workspace with advanced enterprise-grade features.
 
-**🚀 [Live Demo](https://web-production-c04a9.up.railway.app)**
+**🚀 [Live Demo](https://web-production-c04a9.up.railway.app)**  
+**📡 [API Server](https://api-production-ade5.up.railway.app)**
 
 ![Tech Stack](https://img.shields.io/badge/Next.js-14-black?logo=next.js) ![Express](https://img.shields.io/badge/Express-4-green?logo=express) ![Prisma](https://img.shields.io/badge/Prisma-5.22-blue?logo=prisma) ![Socket.io](https://img.shields.io/badge/Socket.io-4-white?logo=socket.io) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue?logo=postgresql)
 
@@ -16,6 +17,11 @@ A production-ready, full-stack team collaboration platform built as a technical 
 - **Kanban Task Tracking:** Agile task management with a smooth, responsive interface.
 - **Enterprise Security:** Granular Role-Based Access Control (RBAC) and Audit Logging.
 - **Offline Resilience:** PWA support with background synchronization.
+
+---
+
+## 🎬 Video Walkthrough
+[Insert Video Link Here]
 
 ---
 
@@ -78,6 +84,14 @@ A complete, tamper-proof history of all workspace changes.
 
 ---
 
+## ⚠️ Known Limitations
+- **Offline Sync:** In extremely rare cases of complex concurrent edits while offline, the "Last-Write-Wins" model may overwrite intermediate changes.
+- **Email Rate Limits:** Currently uses Gmail SMTP, which may be subject to daily sending limits.
+- **Storage:** Large file attachments are subject to Cloudinary's free tier bandwidth and storage constraints.
+- **Concurrency:** Optimized for small to medium-sized teams (up to 50 simultaneous users per workspace).
+
+---
+
 ## ⚙️ Local Setup
 
 ### 1. Clone & Install
@@ -86,22 +100,25 @@ git clone https://github.com/nafisa-tabassum-shouty/Collaborative-Team-Hub.git
 npm install
 ```
 
-### 2. Configure `.env`
+### 2. Configure Environment Variables
+Create a `.env` file in the root for API and a `.env.local` for Web.
+
 **Backend (`apps/api/.env`):**
 ```env
-DATABASE_URL=postgresql://...
-JWT_ACCESS_SECRET=...
-JWT_REFRESH_SECRET=...
-CLOUDINARY_URL=...
-EMAIL_USER=...
-EMAIL_PASS=...
-CLIENT_URL=http://localhost:3000
+PORT=5001
+DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+JWT_ACCESS_SECRET="your_secret"
+JWT_REFRESH_SECRET="your_refresh_secret"
+CLOUDINARY_URL="cloudinary://api_key:api_secret@cloud_name"
+EMAIL_USER="your-email@gmail.com"
+EMAIL_PASS="your-app-password"
+CLIENT_URL="http://localhost:3000"
 ```
 
 **Frontend (`apps/web/.env.local`):**
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5001
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5001
+NEXT_PUBLIC_API_URL="http://localhost:5001"
+NEXT_PUBLIC_SOCKET_URL="http://localhost:5001"
 ```
 
 ### 3. Database Migration
@@ -112,6 +129,7 @@ npx prisma migrate dev
 
 ### 4. Run Development
 ```bash
+# From the root directory
 npm run dev
 ```
 
