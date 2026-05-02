@@ -1143,3 +1143,179 @@ I need a precise and automated guide for organizing my Git commits according to 
 
 **Goal:**
 Fully automate the commit process for complex features, ensuring each change is tracked as an independent, atomic unit according to best Git practices.
+
+---
+
+### Prompt 19 (AUTHENTICATION)
+Build a complete production-grade authentication system for a full-stack app.
+
+Backend (Express + Prisma):
+- Implement register, login, logout, refresh token endpoints
+- Hash passwords using bcrypt
+- Use JWT (access token 15m, refresh token 7d)
+- Store tokens in httpOnly cookies
+- Implement middleware `requireAuth` to protect routes
+- Add `/api/auth/me` to return current user
+- Handle errors properly (invalid credentials, duplicate email)
+
+Frontend (Next.js + Zustand):
+- Create login & register pages
+- Store auth state using Zustand
+- Call `/me` on app load to persist session
+- Redirect unauthenticated users to login
+- Add logout functionality
+
+Bonus:
+- Handle token refresh automatically using Axios interceptor
+- Show loading & error UI
+
+---
+
+### Prompt 20 (WORKSPACES)
+Build a complete workspace management system.
+
+Backend:
+- Create Workspace CRUD APIs
+- Auto-add creator as ADMIN in WorkspaceMember table
+- Invite users by email with role (ADMIN / MEMBER)
+- Prevent duplicate membership
+- Add access control:
+  - Only ADMIN can update/delete workspace
+  - Members can only view
+
+Frontend:
+- Dashboard page listing all workspaces
+- Create workspace form (name, description, accent color)
+- Workspace switcher UI (sidebar)
+- Invite member modal
+
+Bonus:
+- Show member count and role badges
+- Color-based UI theme per workspace
+
+---
+
+### Prompt 21 (GOALS & MILESTONES)
+Build goals and milestones system with nested relationships.
+
+Backend:
+- CRUD APIs for Goals
+- Each goal has: title, owner, dueDate, status
+- Milestones nested under goals
+- Milestone progress (0–100)
+- Only goal owner or ADMIN can update/delete
+
+Frontend:
+- Goals panel with list view
+- Create goal modal
+- Show milestones inside each goal
+- Progress bar UI for milestones
+
+Bonus:
+- Activity feed for goal updates
+- Status filter (TODO, IN_PROGRESS, DONE)
+
+---
+
+### Prompt 22 (ANNOUNCEMENTS - NEWSFEED)
+Build a real-time announcements system like Slack.
+
+Backend:
+- Create announcements (ADMIN only)
+- Pin/unpin announcements
+- Add reactions (emoji-based)
+- Add comments system
+- Prevent duplicate reactions
+
+Frontend:
+- Newsfeed UI with pinned posts on top
+- Emoji reaction picker
+- Comment section per post
+
+Bonus:
+- Show reaction counts grouped by emoji
+- Show if current user reacted
+
+---
+
+### Prompt 23 (ACTION ITEMS - KANBAN)
+Build a Kanban task management system.
+
+Backend:
+- CRUD for ActionItems
+- Fields: title, assignee, priority, dueDate, status
+- Link action item to goal
+- Permission rules:
+  - Assignee, goal owner, or ADMIN can update
+  - Only owner/admin can delete
+
+Frontend:
+- Kanban board with 3 columns:
+  - TODO
+  - IN_PROGRESS
+  - DONE
+- Drag & drop or quick move buttons
+- List view toggle
+
+Bonus:
+- Color-coded priority (LOW, MEDIUM, HIGH)
+
+---
+
+### Prompt 24 (REAL-TIME SYSTEM - Socket.io)
+Implement real-time updates using Socket.io.
+
+Backend:
+- Authenticate socket connection using JWT
+- Join users to workspace-specific rooms
+- Broadcast events:
+  - new announcement
+  - reaction updates
+  - action item updates
+- Track online users
+
+Frontend:
+- Connect socket after login
+- Join workspace room
+- Update Zustand store on events
+
+Bonus:
+- Show online users in Members panel
+- Show typing indicator or live updates
+
+---
+
+### Prompt 25 (ANALYTICS)
+Build dashboard analytics system.
+
+Backend:
+- API to return:
+  - total goals
+  - completed this week
+  - overdue goals
+- CSV export endpoint
+
+Frontend:
+- Dashboard stats cards
+- Goal completion chart (Recharts)
+- Export button (download CSV)
+
+Bonus:
+- Weekly trends graph
+
+---
+
+### Prompt 26 (SUPER BONUS - INTERVIEW KILLER PROMPT)
+Ensure the entire system is:
+- Production-ready
+- Scalable and modular
+- Follows clean architecture
+- Uses proper error handling
+- Includes loading states and UX polish
+- Uses optimistic UI where needed
+- Fully integrated frontend + backend + socket
+
+Also:
+- Automatically create clean Git commits for each feature
+- Use conventional commit format (feat, fix, chore, refactor)
+- Maintain separation of concerns
