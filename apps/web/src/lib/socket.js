@@ -5,7 +5,7 @@ let socket = null;
 export const getSocket = () => socket;
 
 export const connectSocket = () => {
-  if (socket?.connected) return socket;
+  if (socket) return socket;
 
   const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
 
