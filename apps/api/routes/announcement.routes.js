@@ -109,22 +109,37 @@ router.post('/', async (req, res) => {
     if (mentions) {
       const mentionedNames = mentions.map(m => m.substring(1));
       
-      // Find workspace members who match these names
       const mentionedMembers = await prisma.workspaceMember.findMany({
         where: {
           workspaceId,
           user: {
-            name: { in: mentionedNames }
+            name: { in: mentionedNames, mode: 'insensitive' }
           }
         },
-        include: { user: { select: { email: true, name: true } } }
+        include: { user: { select: { id: true, email: true, name: true } } }
       });
 
-      mentionedMembers.forEach(member => {
-        // Don't send email to the author themselves
+      mentionedMembers.forEach(async (member) => {
+        // Don't notify the author themselves
         if (member.user.email !== req.user.email) {
-          const contextUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/workspaces/${workspaceId}`;
-          const emailData = mentionTemplate(req.user.name, content, "ANNOUNCEMENT", contextUrl);
+          const contextUrl = `/workspaces/${workspaceId}`;
+          
+          // Create in-app Notification
+          const notification = await prisma.notification.create({
+            data: {
+              type: "MENTION",
+              content: `${req.user.name} mentioned you in an announcement.`,
+              link: contextUrl,
+              userId: member.user.id
+            }
+          });
+
+          // Broadcast live notification
+          req.io.to(`workspace_${workspaceId}`).emit("notification:new", notification);
+
+          // Send Email
+          const fullUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}${contextUrl}`;
+          const emailData = mentionTemplate(req.user.name, content, "ANNOUNCEMENT", fullUrl);
           sendEmailAsync({
             to: member.user.email,
             subject: emailData.subject,
@@ -248,6 +263,20 @@ router.post('/:id/reactions', async (req, res) => {
       userId: req.user.id
     });
 
+    // Notify author of announcement if someone else reacts
+    if (announcement.authorId !== req.user.id) {
+      const contextUrl = `/workspaces/${announcement.workspaceId}`;
+      const notification = await prisma.notification.create({
+        data: {
+          type: "REACTION",
+          content: `${req.user.name} reacted ${emoji} to your announcement.`,
+          link: contextUrl,
+          userId: announcement.authorId
+        }
+      });
+      req.io.to(`workspace_${announcement.workspaceId}`).emit("notification:new", notification);
+    }
+
     res.status(201).json({ message: "Reaction added", reaction });
   } catch (error) {
     // P2002 means the unique constraint failed (already reacted with this emoji)
@@ -332,16 +361,32 @@ router.post('/:id/comments', async (req, res) => {
         where: {
           workspaceId: announcement.workspaceId,
           user: {
-            name: { in: mentionedNames }
+            name: { in: mentionedNames, mode: 'insensitive' }
           }
         },
-        include: { user: { select: { email: true, name: true } } }
+        include: { user: { select: { id: true, email: true, name: true } } }
       });
 
-      mentionedMembers.forEach(member => {
+      mentionedMembers.forEach(async (member) => {
         if (member.user.email !== req.user.email) {
-          const contextUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/workspaces/${announcement.workspaceId}`;
-          const emailData = mentionTemplate(req.user.name, content, "COMMENT", contextUrl);
+          const contextUrl = `/workspaces/${announcement.workspaceId}`;
+          
+          // Create in-app Notification
+          const notification = await prisma.notification.create({
+            data: {
+              type: "MENTION",
+              content: `${req.user.name} mentioned you in a comment.`,
+              link: contextUrl,
+              userId: member.user.id
+            }
+          });
+
+          // Broadcast live notification
+          req.io.to(`workspace_${announcement.workspaceId}`).emit("notification:new", notification);
+
+          // Send Email
+          const fullUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}${contextUrl}`;
+          const emailData = mentionTemplate(req.user.name, content, "COMMENT", fullUrl);
           sendEmailAsync({
             to: member.user.email,
             subject: emailData.subject,
