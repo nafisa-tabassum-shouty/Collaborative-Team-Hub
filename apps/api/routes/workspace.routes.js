@@ -260,4 +260,92 @@ router.get('/:id/audit-logs', requireAuth, async (req, res) => {
   }
 });
 
+// GET /:id/stats - Get workspace analytics overview
+router.get('/:id/stats', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const now = new Date();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    
+    const [totalGoals, completedThisWeek, overdueGoals] = await Promise.all([
+      prisma.goal.count({ where: { workspaceId: id } }),
+      prisma.goal.count({ 
+        where: { 
+          workspaceId: id, 
+          status: 'DONE',
+          updatedAt: { gte: startOfWeek }
+        } 
+      }),
+      prisma.goal.count({
+        where: {
+          workspaceId: id,
+          status: { not: 'DONE' },
+          dueDate: { lt: new Date() }
+        }
+      })
+    ]);
+
+    res.status(200).json({
+      totalGoals,
+      completedThisWeek,
+      overdueGoals,
+      completionRate: totalGoals > 0 ? Math.round((completedThisWeek / totalGoals) * 100) : 0
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch workspace stats" });
+  }
+});
+
+// GET /:id/trends - Get weekly goal completion trends
+router.get('/:id/trends', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const last7Days = [...Array(7)].map((_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      return d.toISOString().split('T')[0];
+    }).reverse();
+
+    const stats = await Promise.all(last7Days.map(async (date) => {
+      const count = await prisma.goal.count({
+        where: {
+          workspaceId: id,
+          status: 'DONE',
+          updatedAt: {
+            gte: new Date(date + "T00:00:00Z"),
+            lte: new Date(date + "T23:59:59Z")
+          }
+        }
+      });
+      return { date, completed: count };
+    }));
+
+    res.status(200).json(stats);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch trends" });
+  }
+});
+
+// GET /:id/export-csv - Export workspace data as CSV
+router.get('/:id/export-csv', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const goals = await prisma.goal.findMany({
+      where: { workspaceId: id },
+      include: { owner: { select: { name: true } } }
+    });
+
+    let csv = "ID,Title,Status,Due Date,Owner\n";
+    goals.forEach(g => {
+      csv += `${g.id},"${g.title}",${g.status},${g.dueDate ? g.dueDate.toISOString() : 'N/A'},"${g.owner?.name}"\n`;
+    });
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment(`workspace-${id}-export.csv`);
+    res.send(csv);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to export data" });
+  }
+});
+
 module.exports = router;

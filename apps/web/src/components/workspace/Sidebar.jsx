@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { id: "goals",         label: "Goals",         icon: "🎯" },
   { id: "kanban",        label: "Kanban Board",  icon: "📋" },
   { id: "members",       label: "Members",       icon: "👥" },
+  { id: "analytics",     label: "Analytics",     icon: "📊" },
 ];
 
 export default function Sidebar({ workspace, activeView, onViewChange, onLogout }) {

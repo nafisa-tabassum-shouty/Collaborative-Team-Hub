@@ -203,6 +203,26 @@ router.delete('/:goalId', async (req, res) => {
   }
 });
 
+// GET /:goalId/activity - Get goal activity feed
+router.get('/:goalId/activity', async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const { goal, membership } = await getGoalAndMembership(goalId, req.user.id);
+    if (!goal) return res.status(404).json({ error: "Goal not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const logs = await prisma.auditLog.findMany({
+      where: { entity: 'Goal', entityId: goalId },
+      include: { user: { select: { name: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.status(200).json(logs);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch goal activity" });
+  }
+});
+
 
 // ==========================================
 // MILESTONES (/api/goals/:goalId/milestones)

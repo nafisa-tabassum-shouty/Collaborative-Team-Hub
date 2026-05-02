@@ -156,6 +156,15 @@ const useGoalStore = create((set) => ({
       return { success: false, error: error.response?.data?.error };
     }
   },
+
+  fetchGoalActivity: async (goalId) => {
+    try {
+      const { data } = await api.get(`/goals/${goalId}/activity`);
+      return data;
+    } catch (_) {
+      return [];
+    }
+  },
 }));
 
 export default useGoalStore;

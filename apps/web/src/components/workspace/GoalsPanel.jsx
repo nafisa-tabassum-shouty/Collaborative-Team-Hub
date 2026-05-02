@@ -122,11 +122,19 @@ export default function GoalsPanel({ workspaceId }) {
 }
 
 function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone, onAddComment }) {
+  const { fetchGoalActivity } = useGoalStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [newComment, setNewComment] = useState("");
+  const [activity, setActivity] = useState([]);
   const statusOptions = ["TODO", "IN_PROGRESS", "DONE"];
+
+  useEffect(() => {
+    if (isExpanded) {
+      fetchGoalActivity(goal.id).then(setActivity);
+    }
+  }, [isExpanded, goal.id, fetchGoalActivity]);
 
   const calculateTotalProgress = () => {
     if (!goal.milestones || goal.milestones.length === 0) return 0;
@@ -285,8 +293,31 @@ function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone,
                 </button>
               </form>
               
-              <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
-                {goal.comments?.map((comment) => (
+              <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                {/* System Activity & Comments */}
+                {activity.map((item) => (
+                  <div key={item.id} className="text-[11px] border-l-2 border-accent/20 pl-3 py-1 relative">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-bold text-text-primary">{item.user?.name || "System"}</span>
+                      <span className="text-[9px] text-text-muted">
+                         {new Date(item.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {item.action ? (
+                       <p className="text-text-muted italic">
+                         {item.action.replace("_", " ").toLowerCase()} 
+                         {item.details && JSON.parse(item.details).status && (
+                           <span className="text-accent font-bold"> → {JSON.parse(item.details).status}</span>
+                         )}
+                       </p>
+                    ) : (
+                       <p className="text-text-secondary leading-relaxed">{item.content}</p>
+                    )}
+                  </div>
+                ))}
+                
+                {/* Fallback to just comments if activity is loading or empty */}
+                {activity.length === 0 && goal.comments?.map((comment) => (
                   <div key={comment.id} className="text-xs border-l-2 border-accent/20 pl-3 py-1">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-bold text-text-primary">{comment.author?.name}</span>
@@ -295,7 +326,8 @@ function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone,
                     <p className="text-text-secondary leading-relaxed">{comment.content}</p>
                   </div>
                 ))}
-                {!goal.comments?.length && (
+                
+                {activity.length === 0 && !goal.comments?.length && (
                   <p className="text-xs text-text-muted italic">No activity yet.</p>
                 )}
               </div>

@@ -9,8 +9,9 @@ import GoalsPanel from "@/components/workspace/GoalsPanel";
 import KanbanBoard from "@/components/workspace/KanbanBoard";
 import AnnouncementsFeed from "@/components/workspace/AnnouncementsFeed";
 import MembersPanel from "@/components/workspace/MembersPanel";
+import DashboardAnalytics from "@/components/workspace/DashboardAnalytics";
 
-const VIEWS = ["goals", "kanban", "announcements", "members"];
+const VIEWS = ["goals", "kanban", "announcements", "members", "analytics"];
 
 export default function WorkspacePage() {
   const { id } = useParams();
@@ -42,6 +43,7 @@ export default function WorkspacePage() {
       case "kanban":       return <KanbanBoard workspaceId={id} />;
       case "announcements":return <AnnouncementsFeed workspaceId={id} />;
       case "members":      return <MembersPanel workspaceId={id} />;
+      case "analytics":    return <DashboardAnalytics workspaceId={id} />;
       default:             return null;
     }
   };
