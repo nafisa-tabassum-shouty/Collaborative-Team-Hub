@@ -49,6 +49,10 @@ const announcementRoutes = require("./routes/announcement.routes");
 app.use("/api/workspaces/:workspaceId/announcements", announcementRoutes);
 app.use("/api/announcements", announcementRoutes);
 
+// Notifications Routes
+const notificationRoutes = require("./routes/notification.routes");
+app.use("/api/notifications", notificationRoutes);
+
 // Basic health check route
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "API is running" });
