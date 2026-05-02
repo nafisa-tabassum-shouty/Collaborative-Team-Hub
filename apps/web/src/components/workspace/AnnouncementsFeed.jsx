@@ -18,6 +18,8 @@ export default function AnnouncementsFeed({ workspaceId }) {
     liveUpdateComment,
     fetchComments,
     addComment,
+    updateComment,
+    deleteComment,
     isLoading 
   } = useAnnouncementStore();
   const { user } = useAuthStore();
@@ -150,6 +152,8 @@ export default function AnnouncementsFeed({ workspaceId }) {
               onReact={(emoji) => handleReaction(ann.id, emoji, ann.reactions)}
               fetchComments={() => fetchComments(ann.id)}
               onAddComment={(text) => addComment(ann.id, text)}
+              onUpdateComment={(commentId, text) => updateComment(ann.id, commentId, text)}
+              onDeleteComment={(commentId) => deleteComment(ann.id, commentId)}
             />
           ))}
         </div>
@@ -158,10 +162,12 @@ export default function AnnouncementsFeed({ workspaceId }) {
   );
 }
 
-function AnnouncementCard({ announcement, currentUserId, onReact, fetchComments, onAddComment }) {
+function AnnouncementCard({ announcement, currentUserId, onReact, fetchComments, onAddComment, onUpdateComment, onDeleteComment }) {
   const [showComments, setShowComments] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
 
   useEffect(() => {
     if (showComments && !announcement.comments) {
@@ -205,7 +211,15 @@ function AnnouncementCard({ announcement, currentUserId, onReact, fetchComments,
       </div>
 
       {/* Content */}
-      <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">{announcement.content}</p>
+      <p className="text-text-secondary text-sm leading-relaxed whitespace-pre-wrap">
+        {announcement.content.split(/(@\w+)/g).map((part, i) => 
+          part.startsWith('@') ? (
+            <span key={i} className="text-accent font-semibold bg-accent/10 px-1 rounded-sm">{part}</span>
+          ) : (
+            part
+          )
+        )}
+      </p>
 
       {/* Reactions */}
       <div className="flex items-center gap-2 mt-4 flex-wrap">
@@ -262,7 +276,7 @@ function AnnouncementCard({ announcement, currentUserId, onReact, fetchComments,
           {/* Comment list */}
           <div className="space-y-4">
             {announcement.comments?.map((comment) => (
-              <div key={comment.id} className="flex gap-3">
+              <div key={comment.id} className="flex gap-3 group/comment relative">
                 <div className="w-7 h-7 rounded-full bg-bg-secondary flex items-center justify-center text-[10px] font-bold text-text-secondary flex-shrink-0">
                   {comment.author?.name?.charAt(0).toUpperCase()}
                 </div>
@@ -273,8 +287,67 @@ function AnnouncementCard({ announcement, currentUserId, onReact, fetchComments,
                       {new Date(comment.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   </div>
-                  <p className="text-xs text-text-secondary">{comment.content}</p>
+                  
+                  {editingCommentId === comment.id ? (
+                    <form 
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (editingCommentText.trim()) {
+                          await onUpdateComment(comment.id, editingCommentText);
+                          setEditingCommentId(null);
+                        }
+                      }}
+                      className="mt-2"
+                    >
+                      <input
+                        type="text"
+                        value={editingCommentText}
+                        onChange={(e) => setEditingCommentText(e.target.value)}
+                        className="w-full bg-input-bg border border-border-color text-text-primary rounded px-2 py-1 text-xs focus:outline-none focus:border-accent"
+                        autoFocus
+                      />
+                      <div className="flex justify-end gap-2 mt-1">
+                        <button type="button" onClick={() => setEditingCommentId(null)} className="text-[10px] text-text-muted hover:text-text-primary">Cancel</button>
+                        <button type="submit" className="text-[10px] text-accent hover:text-accent-hover font-bold">Save</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <p className="text-xs text-text-secondary whitespace-pre-wrap">
+                      {comment.content.split(/(@\w+)/g).map((part, i) => 
+                        part.startsWith('@') ? (
+                          <span key={i} className="text-accent font-semibold bg-accent/10 px-1 rounded-sm">{part}</span>
+                        ) : (
+                          part
+                        )
+                      )}
+                    </p>
+                  )}
                 </div>
+
+                {/* Actions */}
+                {comment.authorId === currentUserId && editingCommentId !== comment.id && (
+                  <div className="absolute top-2 right-4 opacity-0 group-hover/comment:opacity-100 flex gap-2 transition-opacity">
+                    <button 
+                      onClick={() => {
+                        setEditingCommentId(comment.id);
+                        setEditingCommentText(comment.content);
+                      }}
+                      className="text-xs text-text-muted hover:text-accent bg-bg-card shadow-sm border border-border-color rounded px-2 py-0.5"
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (confirm("Are you sure you want to delete this comment?")) {
+                          onDeleteComment(comment.id);
+                        }
+                      }}
+                      className="text-xs text-text-muted hover:text-red-500 bg-bg-card shadow-sm border border-border-color rounded px-2 py-0.5"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
