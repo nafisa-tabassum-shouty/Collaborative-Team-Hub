@@ -92,46 +92,72 @@ A complete, tamper-proof history of all workspace changes.
 
 ---
 
-## ⚙️ Local Setup
+## ⚙️ Local Setup Instructions
 
-### 1. Clone & Install
+Follow these steps to run the Collaborative Team Hub on your local machine.
+
+### 1. Clone & Install Dependencies
+First, clone the repository and install all required packages from the root directory.
 ```bash
 git clone https://github.com/nafisa-tabassum-shouty/Collaborative-Team-Hub.git
+cd Collaborative-Team-Hub
 npm install
 ```
 
-### 2. Configure Environment Variables
-Create a `.env` file in the root for API and a `.env.local` for Web.
+### 2. Environment Variables Reference
+You need to create two separate `.env` files. One for the backend API and one for the frontend Web application.
 
 **Backend (`apps/api/.env`):**
+Create a `.env` file inside the `apps/api` folder with the following variables:
 ```env
+# Server Port
 PORT=5001
-DATABASE_URL="postgresql://user:pass@localhost:5432/db"
-JWT_ACCESS_SECRET="your_secret"
-JWT_REFRESH_SECRET="your_refresh_secret"
+
+# PostgreSQL connection string (You can use a local DB or Neon/Supabase)
+DATABASE_URL="postgresql://user:pass@localhost:5432/team_hub"
+
+# JWT Secrets for authentication (Use strong random strings)
+JWT_ACCESS_SECRET="your_secure_access_secret"
+JWT_REFRESH_SECRET="your_secure_refresh_secret"
+
+# Cloudinary credentials for avatar & file uploads
 CLOUDINARY_URL="cloudinary://api_key:api_secret@cloud_name"
+
+# Nodemailer credentials for sending invitations via Gmail
 EMAIL_USER="your-email@gmail.com"
-EMAIL_PASS="your-app-password"
+EMAIL_PASS="your-app-password" # Use an App Password, not your real password
+
+# The URL of your frontend application
 CLIENT_URL="http://localhost:3000"
 ```
 
 **Frontend (`apps/web/.env.local`):**
+Create an `.env.local` file inside the `apps/web` folder:
 ```env
-NEXT_PUBLIC_API_URL="http://localhost:5001"
+# The URL where your backend API is running
+NEXT_PUBLIC_API_URL="http://localhost:5001/api"
+
+# The URL for Socket.io real-time connections
 NEXT_PUBLIC_SOCKET_URL="http://localhost:5001"
 ```
 
-### 3. Database Migration
+### 3. Database Setup (Prisma)
+Initialize the database and run migrations to create all required tables.
 ```bash
+# Navigate to the API workspace
 cd apps/api
-npx prisma migrate dev
+
+# Run Prisma migrations
+npx prisma migrate dev --name init
 ```
 
-### 4. Run Development
+### 4. Start the Application
+Return to the root directory and start both the frontend and backend simultaneously using Turborepo.
 ```bash
-# From the root directory
+# From the root directory (Collaborative-Team-Hub)
 npm run dev
 ```
+The frontend will be available at `http://localhost:3000` and the API will be listening on `http://localhost:5001`.
 
 ---
 
