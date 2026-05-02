@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import useWorkspaceStore from "@/store/workspaceStore";
 import useAuthStore from "@/store/authStore";
+import useNotificationStore from "@/store/notificationStore";
 
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -17,7 +19,13 @@ const NAV_ITEMS = [
 export default function Sidebar({ workspace, activeView, onViewChange, onLogout }) {
   const { workspaces, onlineUsers } = useWorkspaceStore();
   const { user } = useAuthStore();
+  const { unreadCount, fetchNotifications, notifications, markAsRead } = useNotificationStore();
+  const [showNotifications, setShowNotifications] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   return (
     <aside className="w-64 bg-sidebar-bg border-r border-border-color flex flex-col h-screen sticky top-0 transition-colors">
@@ -117,13 +125,100 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
             <p className="text-sm font-semibold text-text-primary truncate">{user?.name}</p>
             <p className="text-[10px] text-text-muted truncate opacity-80">{user?.email}</p>
           </div>
-          <button 
-            onClick={onLogout} 
-            title="Logout" 
-            className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-300"
-          >
-            <span className="text-lg">⬡</span>
-          </button>
+          <div className="flex gap-1 items-center relative">
+            <button 
+              onClick={() => setShowNotifications(!showNotifications)}
+              title="Notifications" 
+              className="relative w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-accent hover:bg-accent/10 transition-all duration-300"
+            >
+              <span className="text-lg">🔔</span>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-bg-card flex items-center justify-center text-[8px] font-bold text-white">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+            
+            {/* Notifications Dropdown */}
+            {showNotifications && (
+              <div className="absolute bottom-0 left-[calc(100%+15px)] w-85 bg-bg-card border border-border-color shadow-2xl rounded-2xl p-0 z-50 transform origin-bottom-left transition-all overflow-hidden">
+                <div className="flex justify-between items-center p-4 border-b border-border-color bg-bg-secondary/30">
+                  <h3 className="font-bold text-text-primary text-sm flex items-center gap-2">
+                    Notifications
+                    {unreadCount > 0 && <span className="bg-accent text-white text-[10px] px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
+                  </h3>
+                  <div className="flex gap-3">
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          notifications.filter(n => !n.isRead).forEach(n => markAsRead(n.id));
+                        }} 
+                        className="text-[10px] text-accent hover:underline font-semibold"
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                    <button onClick={() => setShowNotifications(false)} className="text-text-muted hover:text-text-primary">
+                      <span className="text-lg">×</span>
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
+                  {notifications.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                      <span className="text-3xl mb-2 opacity-20">🔔</span>
+                      <p className="text-xs text-text-muted">No notifications yet. When someone mentions you or reacts to your posts, they will show up here.</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border-color/50">
+                      {notifications.map(n => (
+                        <div 
+                          key={n.id} 
+                          onClick={() => {
+                            if (!n.isRead) markAsRead(n.id);
+                            setShowNotifications(false);
+                            if (n.link) router.push(n.link);
+                          }}
+                          className={`p-4 cursor-pointer transition-all relative flex gap-3 hover:bg-bg-secondary group ${!n.isRead ? 'bg-accent/5' : ''}`}
+                        >
+                          {!n.isRead && (
+                            <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-accent rounded-full shadow-sm shadow-accent/50"></span>
+                          )}
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 ${!n.isRead ? 'bg-accent/20 text-accent' : 'bg-bg-secondary text-text-muted'}`}>
+                            {n.type === 'MENTION' ? '@' : n.type === 'REACTION' ? '❤️' : '🔔'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-[12px] leading-relaxed mb-1 ${!n.isRead ? 'text-text-primary font-semibold' : 'text-text-secondary'}`}>
+                              {n.content}
+                            </p>
+                            <div className="text-[10px] text-text-muted flex items-center gap-2">
+                              <span>{new Date(n.createdAt).toLocaleDateString()}</span>
+                              <span className="w-1 h-1 bg-border-color rounded-full"></span>
+                              <span>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="p-3 border-t border-border-color text-center bg-bg-secondary/10">
+                  <button className="text-[10px] text-text-muted hover:text-accent font-medium transition-colors">
+                    See all history
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <button 
+              onClick={onLogout} 
+              title="Logout" 
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all duration-300"
+            >
+              <span className="text-lg">⬡</span>
+            </button>
+          </div>
         </div>
       </div>
     </aside>
