@@ -8,6 +8,13 @@ const useWorkspaceStore = create((set, get) => ({
   onlineUsers: [],
   isLoading: false,
 
+  fetchMembers: async (workspaceId) => {
+    try {
+      const { data } = await api.get(`/workspaces/${workspaceId}/members`);
+      set({ members: data });
+    } catch (_) {}
+  },
+
   fetchWorkspaces: async () => {
     set({ isLoading: true });
     try {
