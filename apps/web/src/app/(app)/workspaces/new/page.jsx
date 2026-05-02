@@ -33,7 +33,7 @@ export default function NewWorkspacePage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white">Create a Workspace</h1>
-          <p className="text-gray-400 text-sm mt-1">Set up your team's collaboration hub</p>
+          <p className="text-gray-400 text-sm mt-1">Set up your team&apos;s collaboration hub</p>
         </div>
 
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">

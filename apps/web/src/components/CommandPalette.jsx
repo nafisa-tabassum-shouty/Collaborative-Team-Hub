@@ -219,7 +219,7 @@ const CommandPalette = () => {
           {filteredItems.length === 0 && (
             <div className="py-12 text-center">
               <Search className="w-12 h-12 text-gray-200 dark:text-gray-800 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">No commands found for "{query}"</p>
+              <p className="text-gray-500 dark:text-gray-400">No commands found for &quot;{query}&quot;</p>
             </div>
           )}
         </div>

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/api";
 import useWorkspaceStore from "@/store/workspaceStore";
 import useAuthStore from "@/store/authStore";
@@ -12,17 +12,17 @@ export default function MembersPanel({ workspaceId }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteStatus, setInviteStatus] = useState(null);
 
-  useEffect(() => {
-    fetchMembers();
-  }, [workspaceId]);
-
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
       const { data } = await api.get(`/workspaces/${workspaceId}`);
       setMembers(data.members || []);
     } catch (_) {}
     finally { setIsLoading(false); }
-  };
+  }, [workspaceId]);
+
+  useEffect(() => {
+    fetchMembers();
+  }, [fetchMembers]);
 
   const currentMembership = members.find(m => m.userId === currentUser?.id);
   const isAdmin = currentMembership?.role === "ADMIN";

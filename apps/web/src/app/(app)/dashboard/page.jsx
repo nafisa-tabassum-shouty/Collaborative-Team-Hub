@@ -14,7 +14,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchWorkspaces();
-  }, []);
+  }, [fetchWorkspaces]);
 
   const handleLogout = async () => {
     await logout();
