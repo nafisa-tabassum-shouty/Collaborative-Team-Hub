@@ -144,7 +144,13 @@ export default function MembersPanel({ workspaceId }) {
                              <span className="text-[8px] font-black bg-bg-secondary text-text-muted px-1.5 py-0.5 rounded uppercase tracking-tighter">You</span>
                            )}
                          </div>
-                         <p className="text-[11px] text-text-muted truncate opacity-80">{member.user?.email}</p>
+                         <div className="flex items-center gap-1.5 mt-0.5">
+                           <p className="text-[11px] text-text-muted truncate opacity-80">{member.user?.email}</p>
+                           <span className="text-[10px] text-border-color">•</span>
+                           <span className={`text-[10px] font-bold ${isOnline ? "text-green-500" : "text-text-muted"}`}>
+                             {isOnline ? "Online" : "Offline"}
+                           </span>
+                         </div>
                        </div>
                        <div className="flex flex-col items-end gap-1">
                          <span
