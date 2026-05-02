@@ -157,6 +157,24 @@ const useGoalStore = create((set) => ({
     }
   },
 
+  updateGoalComment: async (goalId, commentId, content) => {
+    try {
+      const { data } = await api.put(`/goals/${goalId}/comments/${commentId}`, { content });
+      return { success: true, comment: data.comment };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
+  },
+
+  deleteGoalComment: async (goalId, commentId) => {
+    try {
+      await api.delete(`/goals/${goalId}/comments/${commentId}`);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
+  },
+
   fetchGoalActivity: async (goalId) => {
     try {
       const { data } = await api.get(`/goals/${goalId}/activity`);

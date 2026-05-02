@@ -10,124 +10,132 @@ const STATUS_COLORS = {
 };
 
 export default function GoalsPanel({ workspaceId }) {
-  const { goals, fetchGoals, createGoal, updateGoal, deleteGoal, addMilestone, updateMilestone, addGoalComment, isLoading } = useGoalStore();
-  const { user } = useAuthStore();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", dueDate: "" });
-
-  useEffect(() => {
-    fetchGoals(workspaceId);
-  }, [workspaceId, fetchGoals]);
-
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    await createGoal(workspaceId, { ...form, status: "TODO" });
-    setForm({ title: "", description: "", dueDate: "" });
-    setShowForm(false);
-  };
-
-  return (
-    <div className="p-6 max-w-4xl mx-auto transition-colors">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-text-primary">Goals & Milestones</h2>
-          <p className="text-text-secondary text-sm mt-1">Strategic objectives and real-time progress tracking</p>
-        </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-accent hover:bg-accent-hover text-white text-sm font-bold px-6 py-2.5 rounded-full transition-all shadow-lg active:scale-95"
-        >
-          {showForm ? "Cancel" : "+ New Goal"}
-        </button>
-      </div>
-
-      {/* Create Goal Form */}
-      {showForm && (
-        <form
-          onSubmit={handleCreate}
-          className="bg-bg-card border border-border-color rounded-2xl p-6 mb-8 space-y-4 shadow-xl animate-in fade-in slide-in-from-top-4 duration-300"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              required
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="What is your main objective?"
-              className="md:col-span-2 w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-            />
-            <textarea
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Provide some context..."
-              rows={3}
-              className="md:col-span-2 w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none transition-all"
-            />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-[10px] uppercase font-bold text-text-muted ml-1">Due Date</label>
-              <input
-                type="date"
-                value={form.dueDate}
-                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                className="w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
-              />
-            </div>
-            <div className="flex items-end">
-              <button
-                type="submit"
-                className="w-full bg-accent hover:bg-accent-hover text-white text-sm font-bold py-3 rounded-xl transition-all shadow-md active:scale-95"
-              >
-                Launch Goal
-              </button>
-            </div>
+    const { goals, fetchGoals, createGoal, updateGoal, deleteGoal, addMilestone, updateMilestone, addGoalComment, updateGoalComment, deleteGoalComment, isLoading } = useGoalStore();
+    const { user } = useAuthStore();
+    const [showForm, setShowForm] = useState(false);
+    const [form, setForm] = useState({ title: "", description: "", dueDate: "" });
+  
+    useEffect(() => {
+      fetchGoals(workspaceId);
+    }, [workspaceId, fetchGoals]);
+  
+    const handleCreate = async (e) => {
+      e.preventDefault();
+      await createGoal(workspaceId, { ...form, status: "TODO" });
+      setForm({ title: "", description: "", dueDate: "" });
+      setShowForm(false);
+    };
+  
+    return (
+      <div className="p-6 max-w-4xl mx-auto transition-colors">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-text-primary">Goals & Milestones</h2>
+            <p className="text-text-secondary text-sm mt-1">Strategic objectives and real-time progress tracking</p>
           </div>
-        </form>
-      )}
-
-      {/* Goals List */}
-      {isLoading ? (
-        <div className="space-y-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-bg-card border border-border-color rounded-2xl p-6 animate-pulse">
-              <div className="h-5 bg-bg-secondary rounded w-1/3 mb-4" />
-              <div className="h-3 bg-bg-secondary rounded w-2/3 mb-2" />
-              <div className="h-3 bg-bg-secondary rounded w-1/2" />
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="bg-accent hover:bg-accent-hover text-white text-sm font-bold px-6 py-2.5 rounded-full transition-all shadow-lg active:scale-95"
+          >
+            {showForm ? "Cancel" : "+ New Goal"}
+          </button>
+        </div>
+  
+        {/* Create Goal Form */}
+        {showForm && (
+          <form
+            onSubmit={handleCreate}
+            className="bg-bg-card border border-border-color rounded-2xl p-6 mb-8 space-y-4 shadow-xl animate-in fade-in slide-in-from-top-4 duration-300"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input
+                required
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="What is your main objective?"
+                className="md:col-span-2 w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+              />
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                placeholder="Provide some context..."
+                rows={3}
+                className="md:col-span-2 w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none transition-all"
+              />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] uppercase font-bold text-text-muted ml-1">Due Date</label>
+                <input
+                  type="date"
+                  value={form.dueDate}
+                  onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+                  className="w-full bg-input-bg border border-border-color text-text-primary rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent transition-all"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="submit"
+                  className="w-full bg-accent hover:bg-accent-hover text-white text-sm font-bold py-3 rounded-xl transition-all shadow-md active:scale-95"
+                >
+                  Launch Goal
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      ) : goals.length === 0 ? (
-        <div className="text-center py-20 border border-dashed border-border-color rounded-2xl bg-bg-secondary/10">
-          <div className="text-5xl mb-4">🎯</div>
-          <h3 className="text-lg font-bold text-text-primary">No active goals</h3>
-          <p className="text-text-secondary text-sm mt-1 max-w-xs mx-auto">
-            Set strategic objectives for your team and track progress with milestones.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {goals.map((goal) => (
-            <GoalCard 
-              key={goal.id} 
-              goal={goal} 
-              onUpdate={updateGoal} 
-              onDelete={deleteGoal} 
-              onAddMilestone={addMilestone}
-              onUpdateMilestone={updateMilestone}
-              onAddComment={addGoalComment}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+          </form>
+        )}
+  
+        {/* Goals List */}
+        {isLoading ? (
+          <div className="space-y-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-bg-card border border-border-color rounded-2xl p-6 animate-pulse">
+                <div className="h-5 bg-bg-secondary rounded w-1/3 mb-4" />
+                <div className="h-3 bg-bg-secondary rounded w-2/3 mb-2" />
+                <div className="h-3 bg-bg-secondary rounded w-1/2" />
+              </div>
+            ))}
+          </div>
+        ) : goals.length === 0 ? (
+          <div className="text-center py-20 border border-dashed border-border-color rounded-2xl bg-bg-secondary/10">
+            <div className="text-5xl mb-4">🎯</div>
+            <h3 className="text-lg font-bold text-text-primary">No active goals</h3>
+            <p className="text-text-secondary text-sm mt-1 max-w-xs mx-auto">
+              Set strategic objectives for your team and track progress with milestones.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {goals.map((goal) => (
+              <GoalCard 
+                key={goal.id} 
+                goal={goal} 
+                user={user}
+                onUpdate={updateGoal} 
+                onDelete={deleteGoal} 
+                onAddMilestone={addMilestone}
+                onUpdateMilestone={updateMilestone}
+                onAddComment={addGoalComment}
+                onUpdateComment={updateGoalComment}
+                onDeleteComment={deleteGoalComment}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
 
-function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone, onAddComment }) {
+function GoalCard({ goal, user, onUpdate, onDelete, onAddMilestone, onUpdateMilestone, onAddComment, onUpdateComment, onDeleteComment }) {
   const { fetchGoalActivity } = useGoalStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [newComment, setNewComment] = useState("");
   const [activity, setActivity] = useState([]);
+  
+  // Comment editing state
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentContent, setEditingCommentContent] = useState("");
+
   const statusOptions = ["TODO", "IN_PROGRESS", "DONE"];
 
   useEffect(() => {
@@ -147,7 +155,12 @@ function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone,
   const handleAddMilestone = async (e) => {
     e.preventDefault();
     if (!milestoneTitle.trim()) return;
-    await onAddMilestone(goal.id, { title: milestoneTitle, progress: 0 });
+    const res = await onAddMilestone(goal.id, { title: milestoneTitle, progress: 0 });
+    if (res?.success === false) {
+      console.error("Failed to add milestone:", res.error);
+      alert("Failed to add milestone: " + res.error);
+      return;
+    }
     setMilestoneTitle("");
     setShowMilestoneForm(false);
   };
@@ -155,10 +168,52 @@ function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone,
   const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-    await onAddComment(goal.id, newComment);
+    
+    // 1. Optimistic UI update for instant feedback
+    const optimisticComment = {
+      id: `temp-${Date.now()}`,
+      content: newComment,
+      createdAt: new Date().toISOString(),
+      author: { name: "You (Posting...)" }
+    };
+    setActivity(prev => [optimisticComment, ...prev]);
+    
+    // 2. Clear input
+    const commentText = newComment;
     setNewComment("");
-    // Re-fetch goal details to show new comment in activity feed?
-    // For now, optimistic update would be better, but let's just push it.
+    
+    // 3. Save to backend and re-fetch real data
+    const res = await onAddComment(goal.id, commentText);
+    if (res?.success === false) {
+      console.error("Failed to post comment:", res.error);
+      alert("Failed to post comment: " + res.error);
+      // Remove optimistic comment
+      setActivity(prev => prev.filter(c => c.id !== optimisticComment.id));
+      return;
+    }
+    fetchGoalActivity(goal.id).then(setActivity);
+  };
+
+  const handleEditComment = async (commentId) => {
+    if (!editingCommentContent.trim()) return;
+    const res = await onUpdateComment(goal.id, commentId, editingCommentContent);
+    if (res?.success) {
+      setEditingCommentId(null);
+      setEditingCommentContent("");
+      fetchGoalActivity(goal.id).then(setActivity);
+    } else {
+      alert("Failed to edit comment: " + (res?.error || "Unknown error"));
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!confirm("Are you sure you want to delete this comment?")) return;
+    const res = await onDeleteComment(goal.id, commentId);
+    if (res?.success) {
+      fetchGoalActivity(goal.id).then(setActivity);
+    } else {
+      alert("Failed to delete comment: " + (res?.error || "Unknown error"));
+    }
   };
 
   return (
@@ -180,7 +235,9 @@ function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone,
               {goal.title}
             </h3>
             {goal.description && (
-              <p className="text-text-secondary text-sm mt-1 line-clamp-1">{goal.description}</p>
+              <p className={`text-text-secondary text-sm mt-1 ${isExpanded ? "" : "line-clamp-1"}`}>
+                {goal.description}
+              </p>
             )}
             
             {/* Overall Progress Bar */}
@@ -295,26 +352,67 @@ function GoalCard({ goal, onUpdate, onDelete, onAddMilestone, onUpdateMilestone,
               
               <div className="space-y-3 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
                 {/* System Activity & Comments */}
-                {activity.map((item) => (
-                  <div key={item.id} className="text-[11px] border-l-2 border-accent/20 pl-3 py-1 relative">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-bold text-text-primary">{item.user?.name || "System"}</span>
-                      <span className="text-[9px] text-text-muted">
-                         {new Date(item.createdAt).toLocaleDateString()}
-                      </span>
+                {activity.map((item) => {
+                  const isComment = !item.action; // AuditLogs have 'action', comments don't
+                  const isOwner = isComment && item.authorId === user?.id;
+
+                  return (
+                    <div key={item.id} className="text-[11px] border-l-2 border-accent/20 pl-3 py-1.5 relative group">
+                      <div className="flex items-center justify-between mb-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-text-primary">
+                            {item.user?.name || item.author?.name || "System"}
+                          </span>
+                          <span className="text-[9px] text-text-muted">
+                             {new Date(item.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        {isOwner && (
+                          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => { setEditingCommentId(item.id); setEditingCommentContent(item.content); }}
+                              className="text-[9px] text-text-muted hover:text-accent font-bold"
+                            >
+                              Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteComment(item.id)}
+                              className="text-[9px] text-text-muted hover:text-red-500 font-bold"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {item.action ? (
+                         <p className="text-text-muted italic">
+                           {item.action.replace("_", " ").toLowerCase()} 
+                           {item.details && JSON.parse(item.details).status && (
+                             <span className="text-accent font-bold"> → {JSON.parse(item.details).status}</span>
+                           )}
+                         </p>
+                      ) : (
+                        editingCommentId === item.id ? (
+                          <div className="mt-1">
+                            <textarea
+                              value={editingCommentContent}
+                              onChange={(e) => setEditingCommentContent(e.target.value)}
+                              className="w-full bg-bg-card border border-border-color rounded p-2 text-xs focus:ring-1 focus:ring-accent outline-none resize-none"
+                              rows={2}
+                            />
+                            <div className="flex gap-2 mt-1">
+                              <button onClick={() => handleEditComment(item.id)} className="text-[10px] bg-accent text-white px-2 py-0.5 rounded">Save</button>
+                              <button onClick={() => setEditingCommentId(null)} className="text-[10px] text-text-muted hover:text-text-primary">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-text-secondary leading-relaxed">{item.content}</p>
+                        )
+                      )}
                     </div>
-                    {item.action ? (
-                       <p className="text-text-muted italic">
-                         {item.action.replace("_", " ").toLowerCase()} 
-                         {item.details && JSON.parse(item.details).status && (
-                           <span className="text-accent font-bold"> → {JSON.parse(item.details).status}</span>
-                         )}
-                       </p>
-                    ) : (
-                       <p className="text-text-secondary leading-relaxed">{item.content}</p>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
                 
                 {/* Fallback to just comments if activity is loading or empty */}
                 {activity.length === 0 && goal.comments?.map((comment) => (

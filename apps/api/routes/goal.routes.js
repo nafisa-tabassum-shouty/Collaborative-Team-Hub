@@ -213,11 +213,17 @@ router.get('/:goalId/activity', async (req, res) => {
 
     const logs = await prisma.auditLog.findMany({
       where: { entity: 'Goal', entityId: goalId },
-      include: { user: { select: { name: true, avatarUrl: true } } },
-      orderBy: { createdAt: 'desc' }
+      include: { user: { select: { name: true, avatarUrl: true } } }
     });
 
-    res.status(200).json(logs);
+    const comments = await prisma.comment.findMany({
+      where: { goalId: goalId },
+      include: { author: { select: { name: true, avatarUrl: true } } }
+    });
+
+    const combined = [...logs, ...comments].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json(combined);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch goal activity" });
   }
@@ -302,6 +308,83 @@ router.delete('/:goalId/milestones/:milestoneId', async (req, res) => {
     res.status(200).json({ message: "Milestone deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: "Failed to delete milestone" });
+  }
+});
+
+// ==========================================
+// COMMENTS (/api/goals/:goalId/comments)
+// ==========================================
+
+// POST /:goalId/comments - Add a comment to a goal (Activity Feed)
+router.post('/:goalId/comments', async (req, res) => {
+  try {
+    const { goalId } = req.params;
+    const { content } = req.body;
+    
+    if (!goalId) return res.status(400).json({ error: "goalId is required" });
+    if (!content) return res.status(400).json({ error: "Comment content is required" });
+
+    const { goal, membership } = await getGoalAndMembership(goalId, req.user.id);
+    if (!goal) return res.status(404).json({ error: "Goal not found" });
+    if (!membership) return res.status(403).json({ error: "Access denied." });
+
+    const comment = await prisma.comment.create({
+      data: {
+        content,
+        goalId,
+        authorId: req.user.id
+      },
+      include: {
+        author: { select: { id: true, name: true, avatarUrl: true } }
+      }
+    });
+
+    res.status(201).json({ message: "Comment added", comment });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to add comment" });
+  }
+});
+
+// PUT /:goalId/comments/:commentId - Edit a comment
+router.put('/:goalId/comments/:commentId', async (req, res) => {
+  try {
+    const { goalId, commentId } = req.params;
+    const { content } = req.body;
+
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    if (comment.authorId !== req.user.id) return res.status(403).json({ error: "You can only edit your own comments" });
+
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: { content },
+      include: { author: { select: { id: true, name: true, avatarUrl: true } } }
+    });
+
+    res.status(200).json({ message: "Comment updated", comment: updatedComment });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update comment" });
+  }
+});
+
+// DELETE /:goalId/comments/:commentId - Delete a comment
+router.delete('/:goalId/comments/:commentId', async (req, res) => {
+  try {
+    const { goalId, commentId } = req.params;
+
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) return res.status(404).json({ error: "Comment not found" });
+    
+    // Check if user is author or workspace admin
+    const { membership } = await getGoalAndMembership(goalId, req.user.id);
+    if (comment.authorId !== req.user.id && membership?.role !== 'ADMIN') {
+      return res.status(403).json({ error: "You don't have permission to delete this comment" });
+    }
+
+    await prisma.comment.delete({ where: { id: commentId } });
+    res.status(200).json({ message: "Comment deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete comment" });
   }
 });
 
