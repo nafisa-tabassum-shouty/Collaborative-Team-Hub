@@ -153,6 +153,10 @@ const useAnnouncementStore = create((set) => ({
       set((state) => ({
         announcements: state.announcements.map((ann) => {
           if (ann.id !== announcementId) return ann;
+          
+          // Prevent duplicate if socket already added it
+          if (ann.comments?.some((c) => c.id === newComment.id)) return ann;
+
           const comments = ann.comments ? [...ann.comments, newComment] : [newComment];
           return {
             ...ann,
@@ -184,6 +188,43 @@ const useAnnouncementStore = create((set) => ({
         };
       }),
     }));
+  },
+
+  updateComment: async (announcementId, commentId, content) => {
+    try {
+      const { data } = await api.put(`/announcements/${announcementId}/comments/${commentId}`, { content });
+      set((state) => ({
+        announcements: state.announcements.map((ann) => {
+          if (ann.id !== announcementId) return ann;
+          return {
+            ...ann,
+            comments: ann.comments?.map((c) => (c.id === commentId ? { ...c, content: data.comment.content } : c)),
+          };
+        }),
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
+  },
+
+  deleteComment: async (announcementId, commentId) => {
+    try {
+      await api.delete(`/announcements/${announcementId}/comments/${commentId}`);
+      set((state) => ({
+        announcements: state.announcements.map((ann) => {
+          if (ann.id !== announcementId) return ann;
+          return {
+            ...ann,
+            comments: ann.comments?.filter((c) => c.id !== commentId),
+            _count: { ...ann._count, comments: Math.max(0, (ann._count?.comments || 1) - 1) },
+          };
+        }),
+      }));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error };
+    }
   },
 }));
 
