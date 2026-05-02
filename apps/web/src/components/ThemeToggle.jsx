@@ -24,7 +24,7 @@ export default function ThemeToggle({ compact = false }) {
   }
 
   return (
-    <div className="flex p-1 bg-bg-secondary/50 backdrop-blur-sm border border-border-color rounded-xl w-full">
+    <div className="flex p-1 bg-bg-secondary/40 backdrop-blur-md border border-border-color rounded-xl w-full">
       {THEME_OPTIONS.map((option) => {
         const Icon = option.icon;
         const isActive = theme === option.value;
@@ -33,7 +33,7 @@ export default function ThemeToggle({ compact = false }) {
             key={option.value}
             onClick={() => setTheme(option.value)}
             className={`
-              flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-300
+              flex-1 flex items-center justify-center gap-1.5 py-1.5 px-1.5 rounded-lg text-[10px] font-bold uppercase tracking-tight transition-all duration-300
               ${isActive 
                 ? "bg-white dark:bg-gray-800 text-accent shadow-sm ring-1 ring-black/5 dark:ring-white/10" 
                 : "text-text-muted hover:text-text-primary hover:bg-white/40 dark:hover:bg-gray-800/40"
@@ -41,8 +41,8 @@ export default function ThemeToggle({ compact = false }) {
             `}
             title={option.label}
           >
-            <Icon className={`w-3.5 h-3.5 ${isActive ? "text-accent" : "text-text-muted"}`} />
-            {!compact && <span>{option.label}</span>}
+            <Icon size={12} className={isActive ? "text-accent" : "text-text-muted"} />
+            <span>{option.label}</span>
           </button>
         );
       })}
