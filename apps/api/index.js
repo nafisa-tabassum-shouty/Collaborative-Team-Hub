@@ -22,6 +22,12 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+// Request logger
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 // Inject Socket.io into the request object so routes can broadcast events
 app.use((req, res, next) => {
   req.io = io;
