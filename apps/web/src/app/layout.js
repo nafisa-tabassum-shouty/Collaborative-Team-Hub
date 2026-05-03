@@ -13,12 +13,15 @@ export const metadata = {
   title: "Collaborative Team Hub",
   description: "A real-time collaborative workspace for modern teams",
   manifest: "/manifest.json",
-  themeColor: "#4f46e5",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "Team Hub",
   },
+};
+
+export const viewport = {
+  themeColor: "#4f46e5",
 };
 
 export default function RootLayout({ children }) {

@@ -19,7 +19,7 @@ const checkWorkspaceMember = async (workspaceId, userId) => {
 const getAnnouncementAndMembership = async (announcementId, userId) => {
   const announcement = await prisma.announcement.findUnique({
     where: { id: announcementId },
-    select: { workspaceId: true }
+    select: { workspaceId: true, authorId: true }
   });
   if (!announcement) return { announcement: null, membership: null };
 
@@ -46,9 +46,6 @@ router.get('/', async (req, res) => {
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { comments: true } },
-        attachmentUrl: true,
-        attachmentType: true,
-        // Group reactions by emoji using JS later, or just return them
         reactions: {
           select: { emoji: true, userId: true }
         }
@@ -134,8 +131,10 @@ router.post('/', async (req, res) => {
               type: "MENTION",
               content: `${req.user.name} mentioned you in an announcement.`,
               link: contextUrl,
-              userId: member.user.id
-            }
+              userId: member.user.id,
+              actorId: req.user.id
+            },
+            include: { actor: { select: { name: true, avatarUrl: true } } }
           });
 
           // Broadcast live notification
@@ -178,15 +177,26 @@ router.get('/:id', async (req, res) => {
       where: { id },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
-        reactions: true,
+        reactions: { select: { emoji: true, userId: true } },
         comments: {
           include: { author: { select: { id: true, name: true, avatarUrl: true } } },
           orderBy: { createdAt: 'asc' }
-        }
+        },
+        _count: { select: { comments: true } }
       }
     });
 
-    res.status(200).json(announcement);
+    if (!announcement) return res.status(404).json({ error: "Announcement not found" });
+
+    // Format reactions to match the summary format used in the feed
+    const reactionSummary = {};
+    announcement.reactions.forEach(r => {
+      if (!reactionSummary[r.emoji]) reactionSummary[r.emoji] = { count: 0, userReacted: false };
+      reactionSummary[r.emoji].count += 1;
+      if (r.userId === req.user.id) reactionSummary[r.emoji].userReacted = true;
+    });
+
+    res.status(200).json({ ...announcement, reactions: reactionSummary });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch announcement details" });
   }
@@ -275,10 +285,12 @@ router.post('/:id/reactions', async (req, res) => {
           type: "REACTION",
           content: `${req.user.name} reacted ${emoji} to your announcement.`,
           link: contextUrl,
-          userId: announcement.authorId
-        }
+          userId: announcement.authorId,
+          actorId: req.user.id
+        },
+        include: { actor: { select: { name: true, avatarUrl: true } } }
       });
-      req.io.to(`workspace_${announcement.workspaceId}`).emit("notification:new", notification);
+      req.io.to(`user_${announcement.authorId}`).emit("notification:new", notification);
     }
 
     res.status(201).json({ message: "Reaction added", reaction });
@@ -331,7 +343,7 @@ router.delete('/:id/reactions', async (req, res) => {
 router.post('/:id/comments', async (req, res) => {
   try {
     const { id } = req.params;
-    const { content } = req.body;
+    const { content, parentId } = req.body;
 
     if (!content) return res.status(400).json({ error: "Content is required" });
 
@@ -343,7 +355,8 @@ router.post('/:id/comments', async (req, res) => {
       data: {
         content,
         authorId: req.user.id,
-        announcementId: id
+        announcementId: id,
+        parentId: parentId || null
       },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } }
@@ -355,6 +368,28 @@ router.post('/:id/comments', async (req, res) => {
       announcementId: id,
       comment
     });
+
+    // If it's a reply, notify the parent comment's author
+    if (parentId) {
+      const parentComment = await prisma.comment.findUnique({
+        where: { id: parentId },
+        select: { authorId: true }
+      });
+
+      if (parentComment && parentComment.authorId !== req.user.id) {
+        const notification = await prisma.notification.create({
+          data: {
+            type: "COMMENT_REPLY",
+            content: `${req.user.name} replied to your comment.`,
+            link: `/workspaces/${announcement.workspaceId}`,
+            userId: parentComment.authorId,
+            actorId: req.user.id
+          },
+          include: { actor: { select: { name: true, avatarUrl: true } } }
+        });
+        req.io.to(`user_${parentComment.authorId}`).emit("notification:new", notification);
+      }
+    }
 
     // Email Notifications: Detect @mentions and send emails
     const mentions = content.match(/@(\w+)/g);
@@ -381,8 +416,10 @@ router.post('/:id/comments', async (req, res) => {
               type: "MENTION",
               content: `${req.user.name} mentioned you in a comment.`,
               link: contextUrl,
-              userId: member.user.id
-            }
+              userId: member.user.id,
+              actorId: req.user.id
+            },
+            include: { actor: { select: { name: true, avatarUrl: true } } }
           });
 
           // Broadcast live notification
@@ -403,6 +440,7 @@ router.post('/:id/comments', async (req, res) => {
 
     res.status(201).json({ message: "Comment added", comment });
   } catch (error) {
+    console.error("Error adding comment:", error);
     res.status(500).json({ error: "Failed to add comment" });
   }
 });

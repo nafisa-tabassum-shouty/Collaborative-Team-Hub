@@ -4,9 +4,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../lib/prisma');
 
-const generateTokens = (userId) => {
+const generateTokens = (userId, userName) => {
   const accessToken = jwt.sign(
-    { id: userId },
+    { id: userId, name: userName },
     process.env.JWT_ACCESS_SECRET || "fallback_access_secret",
     { expiresIn: '15m' }
   );
@@ -114,7 +114,7 @@ router.post('/register', upload.single('avatar'), async (req, res) => {
       }
     });
 
-    const { accessToken, refreshToken } = generateTokens(user.id);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.name);
     setCookies(res, accessToken, refreshToken);
 
     res.status(201).json({
@@ -161,17 +161,22 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findFirst({ 
+      where: { 
+        email: { equals: email, mode: 'insensitive' } 
+      } 
+    });
+    
     if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(404).json({ error: "No account found with this email. Please sign up first." });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Invalid credentials" });
+      return res.status(401).json({ error: "Incorrect password. Please try again." });
     }
 
-    const { accessToken, refreshToken } = generateTokens(user.id);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.name);
     setCookies(res, accessToken, refreshToken);
 
     res.status(200).json({
@@ -232,13 +237,17 @@ router.post('/refresh', (req, res) => {
       return res.status(401).json({ error: "No refresh token provided" });
     }
 
-    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || "fallback_refresh_secret", (err, decoded) => {
+    jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || "fallback_refresh_secret", async (err, decoded) => {
       if (err) {
         return res.status(403).json({ error: "Invalid refresh token" });
       }
 
+      // Fetch user to get name for the new access token
+      const user = await prisma.user.findUnique({ where: { id: decoded.id }, select: { name: true } });
+      if (!user) return res.status(404).json({ error: "User not found" });
+
       const accessToken = jwt.sign(
-        { id: decoded.id },
+        { id: decoded.id, name: user.name },
         process.env.JWT_ACCESS_SECRET || "fallback_access_secret",
         { expiresIn: '15m' }
       );
@@ -276,6 +285,7 @@ router.post('/refresh', (req, res) => {
 const { requireAuth } = require('../middleware/auth.middleware');
 router.get('/me', requireAuth, async (req, res) => {
   try {
+    const prisma = require('../lib/prisma');
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: { id: true, name: true, email: true, avatarUrl: true, createdAt: true }
