@@ -21,7 +21,9 @@ A production-ready, full-stack team collaboration platform built as a technical 
 ---
 
 ## 🎬 Video Walkthrough
-[Insert Video Link Here]
+[![Collaborative Team Hub Walkthrough](https://img.youtube.com/vi/PeVMXAiNDiA/0.jpg)](https://youtu.be/PeVMXAiNDiA)
+
+*Click the image above to watch the full project walkthrough on YouTube.*
 
 ---
 
