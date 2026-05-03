@@ -8,7 +8,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isLoading } = useAuthStore();
+  const { register, isAuthenticating } = useAuthStore();
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -175,10 +175,10 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isAuthenticating}
               className="w-full bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98]"
             >
-              {isLoading ? "Creating account..." : "Create Account"}
+              {isAuthenticating ? "Creating account..." : "Create Account"}
             </button>
           </form>
 

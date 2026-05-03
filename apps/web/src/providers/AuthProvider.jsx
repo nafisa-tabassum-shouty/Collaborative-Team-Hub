@@ -1,21 +1,44 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import useAuthStore from "@/store/authStore";
 
 const PUBLIC_PATHS = ["/login", "/register"];
 
 export default function AuthProvider({ children }) {
-  const { isAuthenticated, fetchMe, isLoading } = useAuthStore();
+  const { isAuthenticated, fetchMe } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    fetchMe();
+    console.log("🔐 AuthProvider: Initializing...");
+    
+    let isDone = false;
+    const done = () => {
+      if (isDone) return;
+      isDone = true;
+      console.log("🔐 AuthProvider: Initialization complete.");
+      setIsInitialized(true);
+    };
+
+    // Safety timeout
+    const timeout = setTimeout(() => {
+      console.warn("🔐 AuthProvider: Timeout reached, forcing initialization.");
+      done();
+    }, 5000);
+
+    fetchMe()
+      .then(() => console.log("🔐 AuthProvider: fetchMe success."))
+      .catch((err) => console.error("🔐 AuthProvider: fetchMe error:", err))
+      .finally(() => {
+        clearTimeout(timeout);
+        done();
+      });
   }, [fetchMe]);
 
   useEffect(() => {
-    if (isLoading) return;
+    if (!isInitialized) return;
 
     const isPublic = PUBLIC_PATHS.includes(pathname);
     if (!isAuthenticated && !isPublic) {
@@ -24,9 +47,10 @@ export default function AuthProvider({ children }) {
     if (isAuthenticated && isPublic) {
       router.replace("/dashboard");
     }
-  }, [isAuthenticated, pathname, isLoading, router]);
+  }, [isAuthenticated, pathname, isInitialized, router]);
 
-  if (isLoading && !isAuthenticated) {
+  // Show spinner ONLY until first fetchMe completes
+  if (!isInitialized) {
     return (
       <div className="min-h-screen bg-bg-primary flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
