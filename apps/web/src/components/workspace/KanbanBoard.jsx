@@ -54,8 +54,8 @@ function ViewToggle({ viewMode, setViewMode }) {
   );
 }
 
-// ─── Create Task Modal ────────────────────────────────────────────────────────
-function CreateTaskModal({ onClose, onSubmit, goals, members, defaultStatus }) {
+// ─── Create Action Item Modal ────────────────────────────────────────────────────────
+function CreateActionItemModal({ onClose, onSubmit, goals, members, defaultStatus }) {
   const [form, setForm] = useState({
     title: "", description: "", goalId: "", assigneeId: "",
     priority: "MEDIUM", status: defaultStatus || "TODO", dueDate: ""
@@ -68,7 +68,7 @@ function CreateTaskModal({ onClose, onSubmit, goals, members, defaultStatus }) {
     if (!form.goalId) return setError("Please select a Goal");
     setLoading(true);
     const result = await onSubmit(form);
-    if (!result.success) setError(result.error || "Failed to create task");
+    if (!result.success) setError(result.error || "Failed to create action item");
     else onClose();
     setLoading(false);
   };
@@ -78,7 +78,7 @@ function CreateTaskModal({ onClose, onSubmit, goals, members, defaultStatus }) {
       <div className="bg-bg-card border border-border-color rounded-2xl shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-border-color">
-          <h3 className="font-bold text-text-primary text-base">Create New Task</h3>
+          <h3 className="font-bold text-text-primary text-base">Create New Action Item</h3>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-bg-secondary text-text-muted hover:text-text-primary transition-colors text-lg">×</button>
         </div>
 
@@ -90,7 +90,7 @@ function CreateTaskModal({ onClose, onSubmit, goals, members, defaultStatus }) {
             <label className="block text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">Title *</label>
             <input
               required autoFocus
-              placeholder="Task title..."
+              placeholder="Action Item title..."
               value={form.title}
               onChange={e => setForm({...form, title: e.target.value})}
               className="w-full bg-input-bg border border-border-color rounded-xl px-4 py-2.5 text-sm text-text-primary focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-all"
@@ -180,7 +180,7 @@ function CreateTaskModal({ onClose, onSubmit, goals, members, defaultStatus }) {
               Cancel
             </button>
             <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-white text-sm font-bold shadow-lg shadow-accent/20 disabled:opacity-50 transition-all active:scale-95">
-              {loading ? "Creating..." : "Create Task"}
+              {loading ? "Creating..." : "Create Action Item"}
             </button>
           </div>
         </form>
@@ -195,9 +195,9 @@ function ListView({ actionItems, updateActionItem, deleteActionItem, onCreateCli
     <div className="bg-bg-card border border-border-color rounded-2xl overflow-hidden shadow-sm animate-in fade-in duration-300">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-5 py-3 bg-bg-secondary/40 border-b border-border-color">
-        <span className="text-xs font-black uppercase tracking-widest text-text-muted">{actionItems.length} Tasks</span>
+        <span className="text-xs font-black uppercase tracking-widest text-text-muted">{actionItems.length} Action Items</span>
         <button onClick={onCreateClick} className="bg-accent hover:bg-accent-hover text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all shadow-sm">
-          + New Task
+          + New Action Item
         </button>
       </div>
 
@@ -211,7 +211,7 @@ function ListView({ actionItems, updateActionItem, deleteActionItem, onCreateCli
       {actionItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 opacity-40">
           <div className="text-3xl mb-2">📋</div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">No Tasks Yet</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">No Action Items Yet</p>
         </div>
       ) : (
         <div className="divide-y divide-border-color/40">
@@ -254,7 +254,7 @@ function ListView({ actionItems, updateActionItem, deleteActionItem, onCreateCli
                     ))}
                   </div>
                 </div>
-                <button onClick={() => { if (confirm("Delete this task?")) deleteActionItem(item.id); }}
+                <button onClick={() => { if (confirm("Delete this action item?")) deleteActionItem(item.id); }}
                   className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-all text-sm">
                   🗑
                 </button>
@@ -316,7 +316,7 @@ export default function KanbanBoard({ workspaceId }) {
           {viewMode === "kanban" && (
             <button onClick={() => openModal()}
               className="bg-accent hover:bg-accent-hover text-white text-xs font-bold px-4 py-2 rounded-xl shadow-lg shadow-accent/20 transition-all active:scale-95">
-              + New Task
+              + New Action Item
             </button>
           )}
           <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
@@ -325,7 +325,7 @@ export default function KanbanBoard({ workspaceId }) {
 
       {/* Modal */}
       {showModal && (
-        <CreateTaskModal
+        <CreateActionItemModal
           onClose={() => setShowModal(false)}
           onSubmit={handleCreate}
           goals={goals}
@@ -364,7 +364,7 @@ export default function KanbanBoard({ workspaceId }) {
                 {grouped[col.id].length === 0 && (
                   <div className="h-full flex flex-col items-center justify-center py-20 opacity-40">
                     <div className="text-3xl mb-2">📋</div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">No Tasks</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">No Action Items</p>
                   </div>
                 )}
                 {grouped[col.id].map(item => (
@@ -380,7 +380,7 @@ export default function KanbanBoard({ workspaceId }) {
                           </div>
                         )}
                         {/* Delete */}
-                        <button onClick={() => { if (confirm("Delete this task?")) deleteActionItem(item.id); }}
+                        <button onClick={() => { if (confirm("Delete this action item?")) deleteActionItem(item.id); }}
                           className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded text-text-muted hover:text-red-500 transition-all text-xs">
                           ✕
                         </button>

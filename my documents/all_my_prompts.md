@@ -1319,3 +1319,544 @@ Also:
 - Automatically create clean Git commits for each feature
 - Use conventional commit format (feat, fix, chore, refactor)
 - Maintain separation of concerns
+
+## Prompt 19: Implement Real-time Online/Offline Status Updates using Sockets
+
+I need your help to implement real-time online/offline status updates in a workspace environment using sockets. Right now, the logic is not working even though the socket code was updated. I need a clear, step-by-step guide on how to ensure the following:
+
+When a user logs in and clicks on a workspace, they should be immediately shown as "online" in that workspace.
+The total number of online members in that workspace should also update in real-time.
+An online indicator (like a green dot, similar to Facebook) should appear next to the user’s name when they’re online.
+
+Please explain the socket logic in detail, step by step:
+
+How should the server detect a user joining a workspace (what event triggers it)?
+How should the server broadcast this user’s status to all other clients in that workspace?
+How do we ensure the client listens for these updates and changes the UI (e.g., the green dot, the online count)?
+What happens when a user logs out or leaves the workspace (how to handle them becoming "offline")?
+
+I need the exact flow: both frontend logic (how we listen and update the UI) and backend logic (how the server tracks and broadcasts the status). Make sure that the code examples and logic are fully aligned so that no real-time updates get missed, and everything stays in sync.
+
+Once you provide this full, clear logic, I will update my socket implementation accordingly. Thank you.
+
+
+## Prompt 20: Full Debug and Fix for Online Status
+
+I am giving you a REAL UI state from my application. You must FIX the issue completely.
+
+========================
+📸 CURRENT UI PROBLEM
+========================
+
+From the screenshot:
+
+1. Sidebar shows: "0 online"
+2. All members are showing "Offline"
+3. Green status indicator is NOT active
+4. Real-time updates are NOT happening
+
+Expected behavior:
+- When a user enters the workspace → they should instantly appear ONLINE
+- Sidebar online count should update immediately
+- Green dot should appear on avatar
+- Other users should see updates in real-time
+
+========================
+🚨 IMPORTANT
+========================
+DO NOT assume anything is working.
+Treat EVERYTHING as broken and re-check all logic.
+
+========================
+🧠 TASK: FULL DEBUG + FIX
+========================
+
+Step 1: CHECK SOCKET CONNECTION
+- Verify socket is actually connecting
+- Add console logs:
+  - "Socket connected", socket.id
+  - user.id
+- If not connecting → FIX FIRST
+
+------------------------
+
+Step 2: VERIFY JOIN EVENT
+
+Ensure this flow:
+
+Frontend:
+- Register listeners FIRST
+- THEN emit:
+  socket.emit("workspace:join", { workspaceId })
+
+Backend:
+- Receive "workspace:join"
+- socket.join(room)
+- Store user in memory (Map)
+
+Add logs:
+- "User joined workspace"
+- workspaceId
+- current users count
+
+------------------------
+
+Step 3: FIX EVENT FLOW (CRITICAL)
+
+Backend MUST emit:
+
+1. To others:
+   socket.to(room).emit("user:online", user)
+
+2. To self:
+   socket.emit("workspace:active_users", usersList)
+
+------------------------
+
+Step 4: FIX FRONTEND LISTENERS
+
+Ensure these exist and are working:
+
+socket.on("workspace:active_users", ...)
+socket.on("user:online", ...)
+socket.on("user:offline", ...)
+
+Add console logs for each event
+
+------------------------
+
+Step 5: FIX STATE (VERY IMPORTANT)
+
+Problems might be:
+- state not updating
+- duplicate users
+- wrong userId
+
+Fix:
+- Use Set or Map
+- Always compare with user.id
+
+------------------------
+
+Step 6: FIX UI (MATCH SCREENSHOT)
+
+From my UI:
+
+✔ Sidebar:
+- Must show real-time online count
+- Fix: onlineUsers.length
+
+✔ Member List:
+- Show "Online" or "Offline"
+- Add green dot if online
+
+✔ Green Dot Logic:
+isOnline = onlineUsers.some(u => u.id === member.userId)
+
+------------------------
+
+Step 7: HANDLE DISCONNECT
+
+Backend:
+- On "disconnect"
+- Remove user from workspace map
+- Emit: "user:offline"
+
+------------------------
+
+Step 8: DEBUG CHECKLIST (YOU MUST VERIFY)
+
+[ ] When user enters workspace → join event fires
+[ ] Online users list is received
+[ ] Sidebar count updates
+[ ] Green dot appears
+[ ] Other users receive updates
+[ ] On disconnect → user becomes offline
+[ ] No stale users remain
+
+------------------------
+
+Step 9: OUTPUT FORMAT
+
+You MUST provide:
+
+1. FULL fixed backend socket code
+2. FULL frontend socket logic
+3. State management fix
+4. EXACT reason why UI shows "0 online"
+5. EXACT bug explanation
+6. FINAL working flow
+
+------------------------
+
+❌ DO NOT:
+- Give partial code
+- Skip debugging
+- Assume anything works
+- Give theory only
+
+========================
+✅ GOAL
+========================
+
+Make it behave like:
+- Facebook Messenger online system
+- Instant updates
+- No refresh
+
+---
+
+### Prompt 27 (Kanban View Toggle - Board & List)
+I want to add a view toggle INSIDE my existing Kanban Board page (NOT a separate page).
+
+========================
+🎯 GOAL
+========================
+
+Inside the Kanban Board page, users should be able to switch between:
+
+1. Kanban Board View (default)
+2. List View
+
+Both views should use the SAME data.
+
+========================
+📍 UI PLACEMENT
+========================
+
+- Add the toggle in the TOP RIGHT of the Kanban Board page header
+- Use icons:
+  - Kanban icon (grid layout)
+  - List icon (list layout)
+
+- Highlight the active view
+
+========================
+🧠 FUNCTIONAL LOGIC
+========================
+
+1. Create a state:
+   const [viewMode, setViewMode] = useState("kanban");
+
+2. Default:
+   - Kanban view
+
+3. Toggle behavior:
+   - Click Kanban icon → setViewMode("kanban")
+   - Click List icon → setViewMode("list")
+
+4. Conditional rendering:
+   {
+     viewMode === "kanban"
+       ? <KanbanBoard />
+       : <ListView />
+   }
+
+========================
+📦 DATA HANDLING
+========================
+
+- Use SAME tasks/goals data for both views
+- Do NOT fetch data again
+- Do NOT duplicate logic
+
+========================
+📋 LIST VIEW REQUIREMENTS
+========================
+
+Render tasks in a clean table/list:
+
+Each row should show:
+- Task Title
+- Status (Todo / In Progress / Done)
+- Assignee
+- Due Date
+
+Optional:
+- Status color badge
+
+========================
+📊 KANBAN VIEW (KEEP EXISTING)
+========================
+
+- Keep current Kanban implementation
+- Do NOT break drag & drop
+- Do NOT change existing logic
+
+========================
+💾 PERSISTENCE
+========================
+
+- Save selected view in localStorage:
+  localStorage.setItem("viewMode", value)
+
+- On page load:
+  restore from localStorage
+
+========================
+🎨 UI/UX DETAILS
+========================
+
+- Active icon:
+  - highlighted background
+  - different color
+
+- Smooth switching (no reload)
+
+========================
+📁 OUTPUT REQUIRED
+========================
+
+1. Updated Kanban page code (with toggle)
+2. Toggle component code
+3. ListView component
+4. localStorage logic
+
+========================
+❌ DO NOT
+========================
+
+- Do NOT create a new page
+- Do NOT break existing Kanban drag & drop
+- Do NOT refetch data
+
+========================
+✅ FINAL RESULT
+========================
+
+User stays on SAME page and can switch views instantly,
+like:
+- Jira board ↔ list
+- ClickUp board ↔ list
+
+---
+
+### Prompt 28 (COMPLETE ACTION ITEMS SYSTEM - Jira/ClickUp Style)
+I want to IMPLEMENT a complete "Action Items" system in my application.
+
+This feature is currently NOT built, so you must design and implement EVERYTHING from scratch.
+
+========================
+🎯 CORE FEATURES
+========================
+
+1. Create Action Items with:
+   - Title
+   - Description (optional)
+   - Assignee (user)
+   - Priority (Low / Medium / High)
+   - Due Date
+   - Status (Todo / In Progress / Done)
+
+2. Link each Action Item to a parent GOAL
+
+3. Show Action Items in:
+   - Kanban Board View
+   - List View (toggle inside same page)
+
+========================
+🧱 DATABASE DESIGN (MANDATORY)
+========================
+
+Create a new model:
+
+ActionItem:
+- id (string / uuid)
+- title (string)
+- description (text, optional)
+- status (enum: todo | in_progress | done)
+- priority (enum: low | medium | high)
+- dueDate (datetime)
+- goalId (foreign key)
+- assigneeId (foreign key → User)
+- workspaceId (foreign key)
+- createdAt
+- updatedAt
+
+Relationships:
+- ActionItem → belongs to Goal
+- ActionItem → belongs to User (assignee)
+- ActionItem → belongs to Workspace
+
+========================
+🔌 BACKEND (Node + Express + Prisma)
+========================
+
+Create APIs:
+
+1. Create Action Item
+POST /action-items
+
+2. Get all Action Items (by workspace / goal)
+GET /action-items?workspaceId=...
+
+3. Update Action Item
+PATCH /action-items/:id
+
+4. Delete Action Item
+DELETE /action-items/:id
+
+5. Update status (for drag & drop)
+PATCH /action-items/:id/status
+
+Validation:
+- Required fields: title, status, goalId, workspaceId
+- Assignee must exist in workspace
+
+========================
+🎯 BUSINESS LOGIC
+========================
+
+- Only workspace members can create/update
+- Action items must belong to a goal
+- Status change should update instantly (for Kanban)
+
+========================
+🎨 FRONTEND (React)
+========================
+
+========================
+1. CREATE PAGE
+========================
+
+Create a page:
+"Action Items" (inside workspace)
+
+========================
+2. CREATE FORM (MODAL)
+========================
+
+Form fields:
+- Title (input)
+- Description (textarea)
+- Assignee (dropdown users)
+- Priority (select)
+- Due Date (date picker)
+- Status (default: Todo)
+- Goal (dropdown)
+
+Submit → call API
+
+========================
+3. VIEW TOGGLE (IMPORTANT)
+========================
+
+Add toggle INSIDE page header (top-right):
+
+- Kanban icon (grid)
+- List icon (list)
+
+State:
+viewMode = "kanban" | "list"
+
+Persist in localStorage
+
+========================
+4. KANBAN VIEW
+========================
+
+Columns:
+- Todo
+- In Progress
+- Done
+
+Each column shows Action Items
+
+Card UI:
+- Title
+- Assignee avatar
+- Priority badge
+- Due date
+
+Drag & Drop:
+- Move card between columns
+- On drop → update status API
+
+========================
+5. LIST VIEW
+========================
+
+Table/List layout:
+
+Columns:
+- Title
+- Goal
+- Assignee
+- Priority
+- Due Date
+- Status
+
+Features:
+- Status badge color
+- Sort by due date (optional)
+
+========================
+⚡ REAL-TIME (OPTIONAL BUT PREFERRED)
+========================
+
+Use socket:
+
+Events:
+- action_item:created
+- action_item:updated
+- action_item:deleted
+
+Update UI instantly
+
+========================
+🎨 UI/UX DETAILS
+========================
+
+- Priority colors:
+  - High → red
+  - Medium → yellow
+  - Low → green
+
+- Status colors:
+  - Todo → gray
+  - In Progress → blue
+  - Done → green
+
+- Clean modern UI (like Jira / ClickUp)
+
+========================
+📁 OUTPUT REQUIRED
+========================
+
+You MUST provide:
+
+1. Prisma schema
+2. Backend routes + controllers
+3. API validation logic
+4. React components:
+   - ActionItemForm
+   - KanbanBoard
+   - ListView
+   - Toggle component
+5. State management (Zustand or React state)
+6. Drag & Drop logic
+7. localStorage persistence
+
+========================
+❌ DO NOT
+========================
+
+- Do NOT skip database design
+- Do NOT give partial code
+- Do NOT ignore relationships
+- Do NOT break workspace logic
+
+========================
+✅ FINAL GOAL
+========================
+
+A fully working system like:
+- Jira Tasks
+- ClickUp Action Items
+
+User can:
+- Create tasks
+- Assign people
+- Track progress
+- Switch between Kanban and List view
+- Manage everything inside one page

@@ -46,6 +46,8 @@ router.get('/', async (req, res) => {
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } },
         _count: { select: { comments: true } },
+        attachmentUrl: true,
+        attachmentType: true,
         // Group reactions by emoji using JS later, or just return them
         reactions: {
           select: { emoji: true, userId: true }
@@ -79,7 +81,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const { workspaceId } = req.params;
-    const { content, isPinned } = req.body;
+    const { content, isPinned, attachmentUrl, attachmentType } = req.body;
 
     if (!workspaceId) return res.status(400).json({ error: "workspaceId is required" });
     if (!content) return res.status(400).json({ error: "Content is required" });
@@ -94,7 +96,9 @@ router.post('/', async (req, res) => {
         content,
         isPinned: isPinned || false,
         workspaceId,
-        authorId: req.user.id
+        authorId: req.user.id,
+        attachmentUrl,
+        attachmentType
       },
       include: {
         author: { select: { id: true, name: true, avatarUrl: true } }

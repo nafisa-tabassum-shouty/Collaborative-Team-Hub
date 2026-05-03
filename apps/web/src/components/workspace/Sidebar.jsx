@@ -7,6 +7,7 @@ import useAuthStore from "@/store/authStore";
 import useNotificationStore from "@/store/notificationStore";
 
 import ThemeToggle from "@/components/ThemeToggle";
+import ProfileModal from "@/components/workspace/ProfileModal";
 
 const NAV_ITEMS = [
   { id: "announcements", label: "Announcements", icon: "📢" },
@@ -21,6 +22,7 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
   const { user } = useAuthStore();
   const { unreadCount, fetchNotifications, notifications, markAsRead } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -118,10 +120,17 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
       {/* User footer */}
       <div className="px-4 py-4 border-t border-border-color bg-bg-secondary/30 backdrop-blur-sm mt-auto">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm">
-            {user?.name?.charAt(0).toUpperCase()}
+          <div 
+            onClick={() => setShowProfile(true)}
+            className="w-9 h-9 rounded-full bg-accent flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm cursor-pointer overflow-hidden hover:ring-2 hover:ring-accent transition-all"
+          >
+            {user?.avatarUrl ? (
+              <img src={user.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              user?.name?.charAt(0).toUpperCase()
+            )}
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 cursor-pointer" onClick={() => setShowProfile(true)}>
             <p className="text-sm font-semibold text-text-primary truncate">{user?.name}</p>
             <p className="text-[10px] text-text-muted truncate opacity-80">{user?.email}</p>
           </div>
@@ -221,6 +230,7 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
           </div>
         </div>
       </div>
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </aside>
   );
 }

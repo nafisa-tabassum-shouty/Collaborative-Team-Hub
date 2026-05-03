@@ -10,12 +10,26 @@ export default function RegisterPage() {
   const router = useRouter();
   const { register, isLoading } = useAuthStore();
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [avatar, setAvatar] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
   const [error, setError] = useState("");
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatar(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    const result = await register(formData.name, formData.email, formData.password);
+    const result = await register(formData.name, formData.email, formData.password, avatar);
     if (result.success) {
       router.push("/dashboard");
     } else {
@@ -59,6 +73,30 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex flex-col items-center justify-center mb-6">
+              <label className="relative group cursor-pointer">
+                <div className="w-20 h-20 rounded-full border-2 border-dashed border-border-color flex items-center justify-center overflow-hidden transition-all group-hover:border-accent">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center text-text-muted group-hover:text-accent">
+                      <span className="text-xl">📷</span>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
+                <div className="absolute -bottom-1 -right-1 bg-accent text-white p-1.5 rounded-full shadow-lg scale-0 group-hover:scale-100 transition-transform">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                </div>
+              </label>
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-2">Upload Profile Picture</span>
+            </div>
+
             <div className="space-y-2">
               <label className="block text-xs font-bold uppercase tracking-widest text-text-muted ml-1">Full Name</label>
               <input

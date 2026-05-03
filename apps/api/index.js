@@ -53,6 +53,10 @@ app.use("/api/announcements", announcementRoutes);
 const notificationRoutes = require("./routes/notification.routes");
 app.use("/api/notifications", notificationRoutes);
 
+// User Routes
+const userRoutes = require("./routes/user.routes");
+app.use("/api/users", userRoutes);
+
 // Basic health check route
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "API is running" });

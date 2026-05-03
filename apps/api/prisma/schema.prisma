@@ -131,6 +131,8 @@ model Announcement {
   
   reactions   Reaction[]
   comments    Comment[]
+  attachmentUrl String?
+  attachmentType String? // e.g., 'image', 'pdf', etc.
 }
 
 model Comment {

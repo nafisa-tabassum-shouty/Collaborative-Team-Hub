@@ -74,17 +74,33 @@ const setCookies = (res, accessToken, refreshToken) => {
  *       400:
  *         description: Invalid input or email already exists
  */
-router.post('/register', async (req, res) => {
+const upload = require('../middleware/upload.middleware');
+const cloudinary = require('../lib/cloudinary');
+const fs = require('fs');
+
+router.post('/register', upload.single('avatar'), async (req, res) => {
   try {
     const { email, password, name } = req.body;
+    let avatarUrl = undefined;
 
     if (!email || !password || !name) {
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: "All fields are required" });
     }
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
+      if (req.file) fs.unlinkSync(req.file.path);
       return res.status(400).json({ error: "Email is already registered" });
+    }
+
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: 'avatars',
+        transformation: [{ width: 200, height: 200, crop: 'fill' }]
+      });
+      avatarUrl = result.secure_url;
+      fs.unlinkSync(req.file.path);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -93,7 +109,8 @@ router.post('/register', async (req, res) => {
       data: {
         email,
         password: hashedPassword,
-        name
+        name,
+        avatarUrl
       }
     });
 
@@ -105,6 +122,7 @@ router.post('/register', async (req, res) => {
       user: { id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl }
     });
   } catch (error) {
+    if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     res.status(500).json({ error: error.message });
   }
 });

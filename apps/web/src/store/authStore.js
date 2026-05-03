@@ -23,10 +23,23 @@ const useAuthStore = create(
         }
       },
 
-      register: async (name, email, password) => {
+      register: async (name, email, password, avatarFile = null) => {
         set({ isLoading: true });
         try {
-          const { data } = await api.post("/auth/register", { name, email, password });
+          let response;
+          if (avatarFile) {
+            const formData = new FormData();
+            formData.append("name", name);
+            formData.append("email", email);
+            formData.append("password", password);
+            formData.append("avatar", avatarFile);
+            response = await api.post("/auth/register", formData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+          } else {
+            response = await api.post("/auth/register", { name, email, password });
+          }
+          const { data } = response;
           set({ user: data.user, isAuthenticated: true, isLoading: false });
           connectSocket();
           return { success: true };
@@ -42,6 +55,24 @@ const useAuthStore = create(
         } catch (_) {}
         disconnectSocket();
         set({ user: null, isAuthenticated: false });
+      },
+
+      updateProfile: async (name, avatarFile = null) => {
+        set({ isLoading: true });
+        try {
+          const formData = new FormData();
+          formData.append("name", name);
+          if (avatarFile) formData.append("avatar", avatarFile);
+
+          const { data } = await api.put("/users/profile", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          set({ user: data.user, isLoading: false });
+          return { success: true };
+        } catch (error) {
+          set({ isLoading: false });
+          return { success: false, error: error.response?.data?.error || "Profile update failed" };
+        }
       },
 
       fetchMe: async () => {

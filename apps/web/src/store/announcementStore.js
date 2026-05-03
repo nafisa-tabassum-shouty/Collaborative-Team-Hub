@@ -226,6 +226,19 @@ const useAnnouncementStore = create((set) => ({
       return { success: false, error: error.response?.data?.error };
     }
   },
+
+  uploadFile: async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await api.post("/users/upload-attachment", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.error || "Upload failed" };
+    }
+  },
 }));
 
 export default useAnnouncementStore;

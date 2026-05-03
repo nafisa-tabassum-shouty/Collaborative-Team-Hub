@@ -26,6 +26,8 @@ export default function AnnouncementsFeed({ workspaceId }) {
   const [showForm, setShowForm] = useState(false);
   const [content, setContent] = useState("");
   const [isPinned, setIsPinned] = useState(false);
+  const [attachment, setAttachment] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     fetchAnnouncements(workspaceId);
@@ -54,12 +56,29 @@ export default function AnnouncementsFeed({ workspaceId }) {
     };
   }, [workspaceId]);
 
+  const { uploadFile } = useAnnouncementStore();
+
   const handleCreate = async (e) => {
     e.preventDefault();
-    if (!content.trim()) return;
-    await createAnnouncement(workspaceId, { content, isPinned });
+    if (!content.trim() || isUploading) return;
+    
+    let attachmentUrl = null;
+    let attachmentType = null;
+
+    if (attachment) {
+      setIsUploading(true);
+      const uploadResult = await uploadFile(attachment);
+      if (uploadResult.success) {
+        attachmentUrl = uploadResult.data.url;
+        attachmentType = uploadResult.data.format === 'pdf' ? 'pdf' : 'image';
+      }
+      setIsUploading(false);
+    }
+
+    await createAnnouncement(workspaceId, { content, isPinned, attachmentUrl, attachmentType });
     setContent("");
     setIsPinned(false);
+    setAttachment(null);
     setShowForm(false);
   };
 
@@ -111,13 +130,33 @@ export default function AnnouncementsFeed({ workspaceId }) {
               />
               📌 Pin this post
             </label>
-            <button
-              type="submit"
-              className="bg-accent hover:bg-accent-hover text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors"
-            >
-              Post
-            </button>
+            <div className="flex items-center gap-3">
+              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add attachment">
+                <span className="text-xl">📎</span>
+                <input
+                  type="file"
+                  onChange={(e) => setAttachment(e.target.files[0])}
+                  className="hidden"
+                />
+              </label>
+              <button
+                type="submit"
+                disabled={isUploading}
+                className="bg-accent hover:bg-accent-hover text-white text-sm font-semibold px-5 py-2 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isUploading ? "Uploading..." : "Post"}
+              </button>
+            </div>
           </div>
+          {attachment && (
+            <div className="flex items-center justify-between bg-bg-secondary/50 rounded-lg px-3 py-2 mt-2">
+              <div className="flex items-center gap-2 overflow-hidden">
+                <span className="text-sm">📄</span>
+                <span className="text-xs text-text-secondary truncate">{attachment.name}</span>
+              </div>
+              <button onClick={() => setAttachment(null)} className="text-text-muted hover:text-red-500">×</button>
+            </div>
+          )}
         </form>
       )}
 
@@ -220,6 +259,35 @@ function AnnouncementCard({ announcement, currentUserId, onReact, fetchComments,
           )
         )}
       </p>
+
+      {/* Attachments */}
+      {announcement.attachmentUrl && (
+        <div className="mt-4 border border-border-color rounded-xl overflow-hidden bg-bg-secondary/20">
+          {announcement.attachmentType === 'image' ? (
+            <a href={announcement.attachmentUrl} target="_blank" rel="noopener noreferrer">
+              <img src={announcement.attachmentUrl} alt="Attachment" className="max-w-full h-auto max-h-96 object-contain mx-auto" />
+            </a>
+          ) : (
+            <a 
+              href={announcement.attachmentUrl} 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4 hover:bg-bg-secondary transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center text-accent text-xl">
+                📄
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-text-primary truncate">View Attachment</p>
+                <p className="text-[10px] text-text-muted uppercase tracking-widest font-black">Open in new tab</p>
+              </div>
+              <div className="text-text-muted group-hover:text-accent transition-colors">
+                ↗
+              </div>
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Reactions */}
       <div className="flex items-center gap-2 mt-4 flex-wrap">
