@@ -1,0 +1,13 @@
+{
+  "ignore": [
+    "node_modules",
+    "tests",
+    "prisma/migrations",
+    "public",
+    "*.test.js",
+    "check-user.js",
+    "list-users.js"
+  ],
+  "watch": ["."],
+  "ext": "js,json"
+}
