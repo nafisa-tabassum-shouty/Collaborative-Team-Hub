@@ -53,7 +53,7 @@ export default function AnnouncementsFeed({ workspaceId }) {
       socket.off("reaction:update");
       socket.off("comment:new");
     };
-  }, [workspaceId, fetchAnnouncements]);
+  }, [workspaceId, fetchAnnouncements, addLiveAnnouncement, liveUpdateReaction, liveUpdateComment, joinWorkspaceRoom, leaveWorkspaceRoom]);
 
   const { uploadFile } = useAnnouncementStore();
 
