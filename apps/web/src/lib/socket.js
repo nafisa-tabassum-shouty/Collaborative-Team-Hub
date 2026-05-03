@@ -7,7 +7,7 @@ export const getSocket = () => socket;
 export const connectSocket = () => {
   if (socket) return socket;
 
-  const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  const SOCKET_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001").replace(/\/$/, "");
 
   socket = io(SOCKET_URL, {
     withCredentials: true, // Send auth cookies
