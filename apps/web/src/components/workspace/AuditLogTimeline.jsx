@@ -19,7 +19,7 @@ const AuditLogTimeline = ({ workspaceId }) => {
     if (workspaceId) {
       fetchLogs(workspaceId);
     }
-  }, [workspaceId]);
+  }, [workspaceId, fetchLogs]);
 
   if (isLoading) {
     return (

@@ -23,7 +23,7 @@ export default function WorkspacePage() {
 
   useEffect(() => {
     if (id) fetchWorkspaceById(id);
-  }, [id]);
+  }, [id, fetchWorkspaceById]);
 
   if (isLoading) {
     return (
