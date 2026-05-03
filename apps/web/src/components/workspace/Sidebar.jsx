@@ -20,7 +20,7 @@ const NAV_ITEMS = [
 export default function Sidebar({ workspace, activeView, onViewChange, onLogout }) {
   const { workspaces, onlineUsers } = useWorkspaceStore();
   const { user } = useAuthStore();
-  const { unreadCount, fetchNotifications, notifications, markAsRead } = useNotificationStore();
+  const { unreadCount, fetchNotifications, notifications, markAsRead, markAllAsRead } = useNotificationStore();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const router = useRouter();
@@ -150,38 +150,51 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
             
             {/* Notifications Dropdown */}
             {showNotifications && (
-              <div className="absolute bottom-0 left-[calc(100%+15px)] w-85 bg-bg-card border border-border-color shadow-2xl rounded-2xl p-0 z-50 transform origin-bottom-left transition-all overflow-hidden">
+              <div className="absolute bottom-full mb-2 left-0 w-80 bg-bg-card border border-border-color shadow-2xl rounded-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex justify-between items-center p-4 border-b border-border-color bg-bg-secondary/30">
-                  <h3 className="font-bold text-text-primary text-sm flex items-center gap-2">
-                    Notifications
-                    {unreadCount > 0 && <span className="bg-accent text-white text-[10px] px-1.5 py-0.5 rounded-full">{unreadCount}</span>}
-                  </h3>
-                  <div className="flex gap-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-text-primary text-sm">Notifications</h3>
+                    {unreadCount > 0 && (
+                      <span className="bg-accent text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
                     {unreadCount > 0 && (
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          notifications.filter(n => !n.isRead).forEach(n => markAsRead(n.id));
+                          markAllAsRead();
                         }} 
-                        className="text-[10px] text-accent hover:underline font-semibold"
+                        className="text-[10px] text-accent hover:text-accent-hover font-bold transition-colors"
                       >
                         Mark all as read
                       </button>
                     )}
-                    <button onClick={() => setShowNotifications(false)} className="text-text-muted hover:text-text-primary">
-                      <span className="text-lg">×</span>
+                    <button 
+                      onClick={() => setShowNotifications(false)} 
+                      className="text-text-muted hover:text-text-primary transition-colors"
+                    >
+                      ×
                     </button>
                   </div>
                 </div>
-                <div className="max-h-[450px] overflow-y-auto custom-scrollbar">
+
+                <div className="max-h-[380px] overflow-y-auto custom-scrollbar bg-bg-card">
                   {notifications.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                      <span className="text-3xl mb-2 opacity-20">🔔</span>
-                      <p className="text-xs text-text-muted">No notifications yet. When someone mentions you or reacts to your posts, they will show up here.</p>
+                    <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+                      <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center text-3xl mb-4 opacity-40">
+                        🔔
+                      </div>
+                      <p className="text-xs text-text-secondary font-medium">No notifications yet</p>
+                      <p className="text-[10px] text-text-muted mt-1 px-4 leading-relaxed">
+                        Activity in your workspaces will show up here.
+                      </p>
                     </div>
                   ) : (
-                    <div className="divide-y divide-border-color/50">
-                      {notifications.map(n => (
+                    <div className="divide-y divide-border-color/30">
+                      {notifications.slice(0, 10).map(n => (
                         <div 
                           key={n.id} 
                           onClick={() => {
@@ -194,14 +207,22 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
                           {!n.isRead && (
                             <span className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-accent rounded-full shadow-sm shadow-accent/50"></span>
                           )}
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0 ${!n.isRead ? 'bg-accent/20 text-accent' : 'bg-bg-secondary text-text-muted'}`}>
-                            {n.type === 'MENTION' ? '@' : n.type === 'REACTION' ? '❤️' : '🔔'}
+                          
+                          <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-bg-secondary border border-border-color/50">
+                            {n.actor?.avatarUrl ? (
+                              <img src={n.actor.avatarUrl} alt={n.actor.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-accent font-black text-xs bg-accent/10">
+                                {n.actor?.name?.charAt(0) || '?'}
+                              </div>
+                            )}
                           </div>
+
                           <div className="flex-1 min-w-0">
-                            <p className={`text-[12px] leading-relaxed mb-1 ${!n.isRead ? 'text-text-primary font-semibold' : 'text-text-secondary'}`}>
-                              {n.content}
+                            <p className={`text-[12px] leading-relaxed mb-1.5 ${!n.isRead ? 'text-text-primary font-bold' : 'text-text-secondary'}`}>
+                              <span className="text-text-primary font-black">{n.actor?.name || 'Someone'}</span> {n.content.replace(n.actor?.name || 'Someone', '').trim()}
                             </p>
-                            <div className="text-[10px] text-text-muted flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-[9px] text-text-muted font-bold uppercase tracking-wider">
                               <span>{new Date(n.createdAt).toLocaleDateString()}</span>
                               <span className="w-1 h-1 bg-border-color rounded-full"></span>
                               <span>{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -212,9 +233,17 @@ export default function Sidebar({ workspace, activeView, onViewChange, onLogout 
                     </div>
                   )}
                 </div>
-                <div className="p-3 border-t border-border-color text-center bg-bg-secondary/10">
-                  <button className="text-[10px] text-text-muted hover:text-accent font-medium transition-colors">
-                    See all history
+
+                <div className="p-3 border-t border-border-color bg-bg-secondary/20">
+                  <button 
+                    onClick={() => {
+                      setShowNotifications(false);
+                      router.push("/notifications");
+                    }}
+                    className="w-full py-2 bg-bg-card border border-border-color rounded-xl text-[10px] font-black text-text-primary uppercase tracking-widest hover:bg-bg-secondary hover:border-accent/40 transition-all shadow-sm flex items-center justify-center gap-2"
+                  >
+                    See all history 
+                    <span className="text-accent text-xs">→</span>
                   </button>
                 </div>
               </div>
