@@ -35,15 +35,21 @@ const useAnnouncementStore = create((set, get) => ({
     set((state) => ({
       announcements: state.announcements.map((ann) => {
         if (ann.id !== announcementId) return ann;
-        const comments = ann.comments ? [...ann.comments, comment] : [comment];
-        // Prevent double counting if it's already there (e.g. from optimistic update)
-        const isDuplicate = ann.comments?.some(c => c.id === comment.id);
-        if (isDuplicate) return ann;
         
+        // Ensure comments array exists
+        const currentComments = ann.comments || [];
+        
+        // Prevent double counting if it's already there (e.g. from optimistic update or fast API response)
+        const isDuplicate = currentComments.some(c => c.id === comment.id);
+        if (isDuplicate) return ann;
+
         return {
           ...ann,
-          comments,
-          _count: { ...ann._count, comments: (ann._count?.comments || 0) + 1 },
+          comments: [...currentComments, comment],
+          _count: { 
+            ...ann._count, 
+            comments: (ann._count?.comments || 0) + 1 
+          },
         };
       }),
     }));
@@ -194,6 +200,17 @@ const useAnnouncementStore = create((set, get) => ({
       set((state) => ({
         announcements: state.announcements.map((ann) => {
           if (ann.id !== announcementId) return ann;
+          
+          const commentExists = ann.comments?.some(c => c.id === data.comment.id);
+          
+          if (commentExists) {
+            // Socket already added it, just remove the temp one
+            return {
+              ...ann,
+              comments: ann.comments?.filter(c => c.id !== tempId)
+            };
+          }
+
           return {
             ...ann,
             comments: ann.comments?.map((c) => (c.id === tempId ? { ...data.comment, _optimistic: false } : c)),
