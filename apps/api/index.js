@@ -5,22 +5,29 @@ const cookieParser = require("cookie-parser");
 const http = require("http");
 const { Server } = require("socket.io");
 
+const CLIENT_URL = process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000";
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: CLIENT_URL,
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
 app.use(cors({
-  origin: process.env.CLIENT_URL || "http://localhost:3000",
+  origin: CLIENT_URL,
   credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+console.log("🚀 API Initialization:");
+console.log(`- NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`- CLIENT_URL: ${CLIENT_URL}`);
+console.log(`- PORT: ${process.env.PORT || 5000}`);
 
 // Request logger
 app.use((req, res, next) => {
