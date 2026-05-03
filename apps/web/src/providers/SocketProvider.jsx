@@ -71,7 +71,7 @@ export default function SocketProvider({ children, workspaceId }) {
       socket.off("reaction:update");
       socket.off("notification:new");
     };
-  }, [workspaceId]);
+  }, [workspaceId, addOnlineUser, removeOnlineUser, setOnlineUsers, liveUpdateActionItem, addLiveAnnouncement, liveUpdateReaction]);
 
   return children;
 }

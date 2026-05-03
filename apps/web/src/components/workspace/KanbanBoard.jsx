@@ -284,7 +284,7 @@ export default function KanbanBoard({ workspaceId }) {
     fetchActionItems(workspaceId);
     fetchGoals(workspaceId);
     fetchMembers(workspaceId);
-  }, [workspaceId]);
+  }, [workspaceId, fetchActionItems, fetchGoals, fetchMembers]);
 
   const grouped = {
     TODO:        actionItems.filter(i => i.status === "TODO"),
