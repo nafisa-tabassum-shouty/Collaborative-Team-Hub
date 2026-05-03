@@ -96,7 +96,7 @@ export default function NotificationsPage() {
                   </div>
                   <h3 className="text-xl font-black text-text-primary">All quiet here</h3>
                   <p className="text-sm text-text-secondary max-w-xs mx-auto mt-3 font-medium">
-                    When you get mentions or updates, they&apos;ll appear in this history.
+                    When you get mentions or updates, they will appear in this history.
                   </p>
                 </div>
               ) : (
