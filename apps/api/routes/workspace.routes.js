@@ -132,6 +132,56 @@ router.get('/:id', requireAuth, async (req, res) => {
 
 /**
  * @swagger
+ * /api/workspaces/{id}/members:
+ *   get:
+ *     summary: Get all members of a workspace
+ *     tags: [Workspaces]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of members
+ */
+router.get('/:id/members', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if user is a member of this workspace
+    const membership = await prisma.workspaceMember.findUnique({
+      where: { userId_workspaceId: { userId: req.user.id, workspaceId: id } }
+    });
+
+    if (!membership) {
+      return res.status(403).json({ error: "Access denied. You are not a member of this workspace." });
+    }
+
+    const members = await prisma.workspaceMember.findMany({
+      where: { workspaceId: id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatarUrl: true
+          }
+        }
+      }
+    });
+    res.status(200).json(members);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch members" });
+  }
+});
+
+/**
+ * @swagger
  * /api/workspaces/{id}/invite:
  *   post:
  *     summary: Invite a user to a workspace
@@ -182,10 +232,26 @@ router.post('/:id/invite', requireAuth, requirePermission(PERMISSIONS.INVITE_MEM
       include: { user: { select: { name: true, email: true } } }
     });
 
+    // Create in-app Notification
+    const workspace = await prisma.workspace.findUnique({ where: { id } });
+    const notification = await prisma.notification.create({
+      data: {
+        type: "WORKSPACE_JOIN",
+        content: `${req.user.name} added you to the workspace "${workspace.name}"`,
+        link: `/workspaces/${id}`,
+        userId: userToInvite.id,
+        actorId: req.user.id,
+        entityId: id
+      },
+      include: { actor: { select: { name: true, avatarUrl: true } } }
+    });
+
+    // Broadcast live notification
+    req.io.to(`user_${userToInvite.id}`).emit("notification:new", notification);
+
     // Send Email
     const { sendEmailAsync } = require('../utils/email');
     const { invitationTemplate } = require('../utils/emailTemplates');
-    const workspace = await prisma.workspace.findUnique({ where: { id } });
     
     sendEmailAsync({
       to: email,
@@ -265,13 +331,17 @@ router.get('/:id/stats', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const now = new Date();
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
     
-    const [totalGoals, completedThisWeek, overdueGoals] = await Promise.all([
+    // Start of current week (Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const [totalGoals, completedTasksThisWeek, overdueGoals, totalTasks, completedTasks] = await Promise.all([
       prisma.goal.count({ where: { workspaceId: id } }),
-      prisma.goal.count({ 
+      prisma.actionItem.count({ 
         where: { 
-          workspaceId: id, 
+          goal: { workspaceId: id },
           status: 'DONE',
           updatedAt: { gte: startOfWeek }
         } 
@@ -282,21 +352,23 @@ router.get('/:id/stats', requireAuth, async (req, res) => {
           status: { not: 'DONE' },
           dueDate: { lt: new Date() }
         }
-      })
+      }),
+      prisma.actionItem.count({ where: { goal: { workspaceId: id } } }),
+      prisma.actionItem.count({ where: { goal: { workspaceId: id }, status: 'DONE' } })
     ]);
 
     res.status(200).json({
       totalGoals,
-      completedThisWeek,
+      completedThisWeek: completedTasksThisWeek, // Now reflecting tasks
       overdueGoals,
-      completionRate: totalGoals > 0 ? Math.round((completedThisWeek / totalGoals) * 100) : 0
+      completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch workspace stats" });
   }
 });
 
-// GET /:id/trends - Get weekly goal completion trends
+// GET /:id/trends - Get weekly task completion trends
 router.get('/:id/trends', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -307,13 +379,16 @@ router.get('/:id/trends', requireAuth, async (req, res) => {
     }).reverse();
 
     const stats = await Promise.all(last7Days.map(async (date) => {
-      const count = await prisma.goal.count({
+      const startOfDay = new Date(date + "T00:00:00Z");
+      const endOfDay = new Date(date + "T23:59:59Z");
+      
+      const count = await prisma.actionItem.count({
         where: {
-          workspaceId: id,
+          goal: { workspaceId: id },
           status: 'DONE',
           updatedAt: {
-            gte: new Date(date + "T00:00:00Z"),
-            lte: new Date(date + "T23:59:59Z")
+            gte: startOfDay,
+            lte: endOfDay
           }
         }
       });
