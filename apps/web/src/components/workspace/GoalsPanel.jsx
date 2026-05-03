@@ -172,29 +172,13 @@ function GoalCard({ goal, user, onUpdate, onDelete, onAddMilestone, onUpdateMile
     e.preventDefault();
     if (!newComment.trim()) return;
     
-    // 1. Optimistic UI update for instant feedback
-    const optimisticComment = {
-      id: `temp-${Date.now()}`,
-      content: newComment,
-      createdAt: new Date().toISOString(),
-      author: { name: "You (Posting...)" }
-    };
-    setActivity(prev => [optimisticComment, ...prev]);
-    
-    // 2. Clear input
     const commentText = newComment;
     setNewComment("");
     
-    // 3. Save to backend and re-fetch real data
     const res = await onAddComment(goal.id, commentText);
-    if (res?.success === false) {
-      console.error("Failed to post comment:", res.error);
-      alert("Failed to post comment: " + res.error);
-      // Remove optimistic comment
-      setActivity(prev => prev.filter(c => c.id !== optimisticComment.id));
-      return;
+    if (res?.success) {
+      fetchGoalActivity(goal.id).then(setActivity);
     }
-    fetchGoalActivity(goal.id).then(setActivity);
   };
 
   const handleEditComment = async (commentId) => {
@@ -214,13 +198,11 @@ function GoalCard({ goal, user, onUpdate, onDelete, onAddMilestone, onUpdateMile
     const res = await onDeleteComment(goal.id, commentId);
     if (res?.success) {
       fetchGoalActivity(goal.id).then(setActivity);
-    } else {
-      alert("Failed to delete comment: " + (res?.error || "Unknown error"));
     }
   };
 
   return (
-    <div className={`bg-bg-card border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg ${isExpanded ? "ring-1 ring-accent/30 border-accent/30" : "border-border-color shadow-sm"}`}>
+    <div className={`bg-bg-card border rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg ${isExpanded ? "ring-1 ring-accent/30 border-accent/30" : "border-border-color shadow-sm"} ${goal._optimistic ? "opacity-70 animate-pulse pointer-events-none" : ""}`}>
       <div className="p-6 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
@@ -347,7 +329,7 @@ function GoalCard({ goal, user, onUpdate, onDelete, onAddMilestone, onUpdateMile
 
               <div className="space-y-3">
                 {goal.milestones?.map((m) => (
-                  <div key={m.id} className="bg-bg-card/50 border border-border-color p-3 rounded-xl">
+                  <div key={m.id} className={`bg-bg-card/50 border border-border-color p-3 rounded-xl transition-opacity ${m._optimistic ? "opacity-70 animate-pulse" : ""}`}>
                     <div className="flex justify-between items-center mb-1.5">
                       <span className="text-xs font-semibold text-text-primary truncate">{m.title}</span>
                       <span className="text-[10px] font-black text-accent">{m.progress}%</span>
@@ -358,7 +340,7 @@ function GoalCard({ goal, user, onUpdate, onDelete, onAddMilestone, onUpdateMile
                       max="100" 
                       value={m.progress}
                       onChange={(e) => onUpdateMilestone(goal.id, m.id, { progress: parseInt(e.target.value) })}
-                      className="w-full h-1 bg-bg-secondary rounded-lg appearance-none cursor-pointer accent-accent"
+                      className="w-full custom-range"
                     />
                   </div>
                 ))}

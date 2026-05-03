@@ -339,6 +339,37 @@ router.post('/:goalId/comments', async (req, res) => {
       }
     });
 
+    // Detect @mentions and notify
+    const mentions = content.match(/@(\w+)/g);
+    if (mentions) {
+      const mentionedNames = mentions.map(m => m.substring(1));
+      const mentionedMembers = await prisma.workspaceMember.findMany({
+        where: {
+          workspaceId: goal.workspaceId,
+          user: { name: { in: mentionedNames, mode: 'insensitive' } }
+        },
+        include: { user: { select: { id: true, email: true } } }
+      });
+
+      mentionedMembers.forEach(async (member) => {
+        if (member.userId !== req.user.id) {
+          const contextUrl = `/workspaces/${goal.workspaceId}`;
+          const notification = await prisma.notification.create({
+            data: {
+              type: "MENTION",
+              content: `${req.user.name} mentioned you in a goal comment.`,
+              link: contextUrl,
+              userId: member.userId,
+              actorId: req.user.id,
+              entityId: goalId
+            },
+            include: { actor: { select: { name: true, avatarUrl: true } } }
+          });
+          req.io.to(`user_${member.userId}`).emit("notification:new", notification);
+        }
+      });
+    }
+
     res.status(201).json({ message: "Comment added", comment });
   } catch (error) {
     res.status(500).json({ error: "Failed to add comment" });
