@@ -7,19 +7,36 @@ export default function ProfileModal({ onClose }) {
   const [name, setName] = useState(user?.name || "");
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user?.avatarUrl || null);
+  const [isCustomAvatar, setIsCustomAvatar] = useState(!!user?.avatarUrl && !user.avatarUrl.includes("dicebear"));
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const DEFAULT_AVATARS = [
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Molly",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Willow",
+  ];
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setAvatar(file);
+      setIsCustomAvatar(true);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const selectDefaultAvatar = (url) => {
+    setAvatar(url);
+    setAvatarPreview(url);
+    setIsCustomAvatar(false);
   };
 
   const handleSubmit = async (e) => {
@@ -47,20 +64,43 @@ export default function ProfileModal({ onClose }) {
           {error && <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold">{error}</div>}
           {success && <div className="p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-500 text-xs font-bold">{success}</div>}
 
-          <div className="flex flex-col items-center justify-center">
-            <label className="relative group cursor-pointer">
-              <div className="w-24 h-24 rounded-full border-2 border-dashed border-border-color flex items-center justify-center overflow-hidden transition-all group-hover:border-accent">
-                {avatarPreview ? (
-                  <img src={avatarPreview} alt="Profile" className="w-full h-full object-cover" />
+          <div className="space-y-4">
+            <label className="block text-[10px] font-black uppercase tracking-widest text-text-muted ml-1">Change Avatar</label>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {DEFAULT_AVATARS.map((url, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => selectDefaultAvatar(url)}
+                  className={`w-10 h-10 rounded-full border-2 transition-all overflow-hidden hover:scale-110 ${
+                    avatarPreview === url ? "border-accent shadow-lg scale-110" : "border-transparent opacity-60 hover:opacity-100"
+                  }`}
+                >
+                  <img src={url} alt={`Avatar ${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+              
+              <label className={`w-10 h-10 rounded-full border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:border-accent hover:bg-accent/5 ${
+                isCustomAvatar ? "border-accent bg-accent/10" : "border-border-color text-text-muted"
+              }`}>
+                {isCustomAvatar && avatarPreview && !avatarPreview.startsWith("https://api.dicebear.com") ? (
+                  <img src={avatarPreview} alt="Custom" className="w-full h-full object-cover rounded-full" />
                 ) : (
-                  <div className="text-2xl opacity-20">👤</div>
+                  <span className="text-lg">📷</span>
                 )}
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <span className="text-white text-xs font-bold uppercase">Change</span>
-                </div>
+                <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              </label>
+            </div>
+
+            <div className="flex justify-center">
+              <div className="w-20 h-20 rounded-full border-4 border-accent/20 p-1">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Selected" className="w-full h-full object-cover rounded-full bg-white shadow-xl" />
+                ) : (
+                  <div className="w-full h-full bg-bg-secondary rounded-full flex items-center justify-center text-2xl">👤</div>
+                )}
               </div>
-              <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-            </label>
+            </div>
           </div>
 
           <div className="space-y-2">

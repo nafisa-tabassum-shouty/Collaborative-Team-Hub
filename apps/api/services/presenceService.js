@@ -2,12 +2,19 @@
 // Maps goalId -> Map(socketId -> { userId, name, cursor: { x, y } })
 const goalPresence = new Map();
 
+const COLORS = [
+  "#f87171", "#fb923c", "#fbbf24", "#a3e635", "#4ade80", 
+  "#2dd4bf", "#22d3ee", "#38bdf8", "#818cf8", "#c084fc", "#f472b6"
+];
+
 const joinGoalRoom = (goalId, socketId, userData) => {
   if (!goalPresence.has(goalId)) {
     goalPresence.set(goalId, new Map());
   }
+  const color = COLORS[Math.floor(Math.random() * COLORS.length)];
   goalPresence.get(goalId).set(socketId, {
     ...userData,
+    color,
     cursor: { x: 0, y: 0 }
   });
   return Array.from(goalPresence.get(goalId).values());

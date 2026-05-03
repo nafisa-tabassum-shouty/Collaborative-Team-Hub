@@ -80,8 +80,8 @@ const fs = require('fs');
 
 router.post('/register', upload.single('avatar'), async (req, res) => {
   try {
-    const { email, password, name } = req.body;
-    let avatarUrl = undefined;
+    const { email, password, name, avatarUrl: bodyAvatarUrl } = req.body;
+    let avatarUrl = bodyAvatarUrl || undefined;
 
     if (!email || !password || !name) {
       if (req.file) fs.unlinkSync(req.file.path);

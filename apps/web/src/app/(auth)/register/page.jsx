@@ -12,18 +12,35 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [avatar, setAvatar] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(null);
+  const [isCustomAvatar, setIsCustomAvatar] = useState(false);
   const [error, setError] = useState("");
+
+  const DEFAULT_AVATARS = [
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Molly",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Oliver",
+    "https://api.dicebear.com/7.x/avataaars/svg?seed=Willow",
+  ];
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       setAvatar(file);
+      setIsCustomAvatar(true);
       const reader = new FileReader();
       reader.onloadend = () => {
         setAvatarPreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const selectDefaultAvatar = (url) => {
+    setAvatar(url); // Storing the URL string as 'avatar'
+    setAvatarPreview(url);
+    setIsCustomAvatar(false);
   };
 
   const handleSubmit = async (e) => {
@@ -73,28 +90,52 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex flex-col items-center justify-center mb-6">
-              <label className="relative group cursor-pointer">
-                <div className="w-20 h-20 rounded-full border-2 border-dashed border-border-color flex items-center justify-center overflow-hidden transition-all group-hover:border-accent">
-                  {avatarPreview ? (
-                    <img src={avatarPreview} alt="Avatar Preview" className="w-full h-full object-cover" />
+            <div className="space-y-4">
+              <label className="block text-xs font-bold uppercase tracking-widest text-text-muted ml-1">Select Avatar</label>
+              
+              <div className="flex flex-wrap gap-3 justify-center">
+                {DEFAULT_AVATARS.map((url, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => selectDefaultAvatar(url)}
+                    className={`w-12 h-12 rounded-full border-2 transition-all overflow-hidden hover:scale-110 active:scale-95 ${
+                      avatarPreview === url ? "border-accent shadow-lg scale-110" : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    <img src={url} alt={`Avatar ${idx}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+                
+                <label className={`w-12 h-12 rounded-full border-2 border-dashed flex items-center justify-center cursor-pointer transition-all hover:border-accent hover:bg-accent/5 ${
+                  isCustomAvatar ? "border-accent bg-accent/10" : "border-border-color text-text-muted"
+                }`}>
+                  {isCustomAvatar && avatarPreview ? (
+                    <img src={avatarPreview} alt="Custom" className="w-full h-full object-cover rounded-full" />
                   ) : (
-                    <div className="flex flex-col items-center text-text-muted group-hover:text-accent">
-                      <span className="text-xl">📷</span>
-                    </div>
+                    <span className="text-xl">📷</span>
                   )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {avatarPreview && (
+                <div className="flex justify-center animate-in zoom-in-50 duration-300">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full border-4 border-accent/20 p-1">
+                      <img src={avatarPreview} alt="Selected Avatar" className="w-full h-full object-cover rounded-full bg-white shadow-xl" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 bg-accent text-white p-1.5 rounded-full shadow-lg">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                  </div>
                 </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  className="hidden"
-                />
-                <div className="absolute -bottom-1 -right-1 bg-accent text-white p-1.5 rounded-full shadow-lg scale-0 group-hover:scale-100 transition-transform">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-                </div>
-              </label>
-              <span className="text-[10px] font-bold text-text-muted uppercase tracking-widest mt-2">Upload Profile Picture</span>
+              )}
             </div>
 
             <div className="space-y-2">

@@ -1,129 +1,110 @@
-import React, { useEffect, useRef, useState } from "react";
-import useSocketStore from "@/store/socketStore";
-import useGoalStore from "@/store/goalStore";
-import useAuthStore from "@/store/authStore";
-import { User } from "lucide-react";
+"use client";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { useEffect, useState, useRef } from "react";
+import { connectSocket } from "@/lib/socket";
+import "@/styles/editor.css";
 
-const CollaborativeEditor = ({ goalId }) => {
-  const { socket } = useSocketStore();
-  const { user } = useAuthStore();
-  const { 
-    liveDescription, 
-    setLiveDescription, 
-    collaborators, 
-    setCollaborators, 
-    remoteCursors, 
-    setRemoteCursor,
-    updateGoal 
-  } = useGoalStore();
-  
-  const textareaRef = useRef(null);
-  const saveTimeoutRef = useRef(null);
-  
-  // Join room on mount
+export default function CollaborativeEditor({ goalId, initialContent, user, onSave }) {
+  const [activeUsers, setActiveUsers] = useState([]);
+  const [cursors, setCursors] = useState({});
+  const socketRef = useRef(null);
+  const isRemoteUpdate = useRef(false);
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: initialContent,
+    editorProps: {
+      attributes: {
+        class: "prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[150px] p-4 bg-input-bg border border-border-color rounded-xl text-text-primary",
+      },
+    },
+    onUpdate: ({ editor }) => {
+      if (isRemoteUpdate.current) {
+        isRemoteUpdate.current = false;
+        return;
+      }
+      const content = editor.getHTML();
+      socketRef.current?.emit("goal:update", { goalId, content });
+      
+      // Auto-save debounced
+      if (onSave) {
+        clearTimeout(window.saveTimeout);
+        window.saveTimeout = setTimeout(() => onSave(content), 2000);
+      }
+    },
+    onSelectionUpdate: ({ editor }) => {
+      const { from, to } = editor.state.selection;
+      socketRef.current?.emit("goal:cursor_move", { 
+        goalId, 
+        cursor: { from, to, name: user.name, color: user.color || "#4f46e5" } 
+      });
+    },
+  });
+
   useEffect(() => {
-    if (socket && goalId) {
-      socket.emit("goal:join", { goalId });
-      
-      socket.on("goal:user_list", ({ users }) => {
-        setCollaborators(users);
-      });
-      
-      socket.on("goal:content_update", ({ content, userId }) => {
-        if (userId !== user.id) {
-          setLiveDescription(content);
-        }
-      });
-      
-      socket.on("goal:cursor_update", ({ userId, cursor }) => {
-        if (userId !== user.id) {
-          setRemoteCursor(userId, cursor);
-        }
-      });
-      
-      return () => {
-        socket.emit("goal:leave", { goalId });
-        socket.off("goal:user_list");
-        socket.off("goal:content_update");
-        socket.off("goal:cursor_update");
-      };
-    }
-  }, [socket, goalId]);
+    const socket = connectSocket();
+    socketRef.current = socket;
 
-  // Handle local text changes
-  const handleChange = (e) => {
-    const val = e.target.value;
-    setLiveDescription(val);
-    
-    // Broadcast to others
-    socket.emit("goal:update", { goalId, content: val });
-    
-    // Debounced save to DB
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-    saveTimeoutRef.current = setTimeout(() => {
-      updateGoal(goalId, { description: val });
-    }, 2000); // Save after 2 seconds of inactivity
-  };
+    socket.emit("goal:join", { goalId });
 
-  // Handle cursor movement
-  const handleKeyUp = (e) => {
-    const { selectionStart } = e.target;
-    // Calculate cursor position (simple logic for now)
-    socket.emit("goal:cursor_move", { 
-      goalId, 
-      cursor: { pos: selectionStart } 
+    socket.on("goal:content_update", ({ content, userId }) => {
+      if (userId !== user.id && editor) {
+        isRemoteUpdate.current = true;
+        editor.commands.setContent(content, false);
+      }
     });
-  };
+
+    socket.on("goal:cursor_update", ({ userId, cursor }) => {
+      if (userId !== user.id) {
+        setCursors((prev) => ({ ...prev, [userId]: cursor }));
+      }
+    });
+
+    socket.on("goal:user_list", ({ users }) => {
+      setActiveUsers(users);
+    });
+
+    return () => {
+      socket.emit("goal:leave", { goalId });
+      socket.off("goal:content_update");
+      socket.off("goal:cursor_update");
+      socket.off("goal:user_list");
+    };
+  }, [goalId, editor, user.id]);
 
   return (
-    <div className="space-y-4">
-      {/* Collaborators List */}
-      <div className="flex items-center space-x-2">
-        <div className="flex -space-x-2">
-          {collaborators.map((c, i) => (
+    <div className="relative">
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex -space-x-2 overflow-hidden">
+          {activeUsers.map((u) => (
             <div 
-              key={c.id || i}
-              className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 bg-indigo-500 flex items-center justify-center text-white text-xs overflow-hidden"
-              title={c.name}
+              key={u.id}
+              title={u.name}
+              className="w-7 h-7 rounded-full border-2 border-bg-card flex items-center justify-center text-[10px] font-bold text-white shadow-sm shrink-0"
+              style={{ backgroundColor: u.color || "#4f46e5" }}
             >
-              {c.avatarUrl ? (
-                <img src={c.avatarUrl} alt={c.name} className="w-full h-full object-cover" />
-              ) : (
-                <User size={14} />
-              )}
+              {u.name.charAt(0).toUpperCase()}
             </div>
           ))}
         </div>
-        <span className="text-xs text-gray-500 font-medium">
-          {collaborators.length} editing now
+        <span className="text-[10px] font-black uppercase text-text-muted tracking-widest">
+          {activeUsers.length} Editing
         </span>
       </div>
 
-      {/* Editor Area */}
-      <div className="relative group">
-        <textarea
-          ref={textareaRef}
-          value={liveDescription}
-          onChange={handleChange}
-          onKeyUp={handleKeyUp}
-          onClick={handleKeyUp}
-          placeholder="Start writing goal description..."
-          className="w-full min-h-[300px] p-6 rounded-2xl bg-white dark:bg-gray-800 border-2 border-transparent focus:border-indigo-500 transition-all outline-none text-gray-700 dark:text-gray-200 resize-none shadow-sm"
-        />
+      <div className="relative">
+        <EditorContent editor={editor} />
         
-        {/* Remote Cursors Overlay (Conceptual - mapping selectionStart to visually absolute position would require mirror div logic) */}
-        <div className="absolute top-0 left-0 pointer-events-none w-full h-full p-6 text-transparent whitespace-pre-wrap break-words border-2 border-transparent">
-          {/* This is a visual ghost layer */}
-          {liveDescription}
-        </div>
+        {/* Render Remote Cursors (Simplified version) */}
+        {Object.entries(cursors).map(([userId, cursor]) => {
+          // This is a simplified cursor rendering. 
+          // For a perfect one, we'd use TipTap's CollaborationCursor extension
+          // which maps coordinates to the document position.
+          return null; // Cursors are better handled by TipTap extension
+        })}
       </div>
-      
-      <div className="flex justify-between items-center text-[10px] uppercase tracking-wider text-gray-400 font-semibold px-2">
-        <span>Real-time Sync Enabled</span>
-        <span>Auto-saving to cloud</span>
-      </div>
+      <p className="text-[9px] text-text-muted mt-2 italic">Changes are saved automatically and synced in real-time.</p>
     </div>
   );
-};
-
-export default CollaborativeEditor;
+}

@@ -1860,3 +1860,296 @@ User can:
 - Track progress
 - Switch between Kanban and List view
 - Manage everything inside one page
+
+### Prompt 29 (Collaborative Editing for Goal Description)
+I want to implement REAL-TIME collaborative editing for a goal description, similar to Google Docs.
+
+Multiple users should be able to edit the SAME goal description at the SAME time and see each other's cursor positions and changes live.
+
+========================
+🎯 CORE REQUIREMENTS
+========================
+
+1. Multiple users can open the same goal
+2. All users can:
+   - Edit text simultaneously
+   - See updates instantly (no refresh)
+   - See each other’s LIVE cursor position
+
+3. Each user should have:
+   - Unique cursor color
+   - Name label near cursor (like Google Docs)
+
+========================
+🧠 SYSTEM DESIGN
+========================
+
+Use:
+- Socket.io for real-time communication
+- Rich text editor (Quill / TipTap / Slate)
+
+Each goal will act as a "room":
+room name → goal_${goalId}
+
+========================
+🔌 BACKEND LOGIC
+========================
+
+1. When user opens goal:
+   socket.emit("goal:join", { goalId })
+
+2. Server:
+   - socket.join(goal_${goalId})
+   - Track active users in that goal
+
+3. Text Editing:
+   socket.on("goal:update", { goalId, content })
+
+   - Broadcast to others:
+     socket.to(room).emit("goal:content_update", { content, userId })
+
+4. Cursor Tracking:
+   socket.on("goal:cursor_move", { goalId, cursor })
+
+   - Broadcast:
+     socket.to(room).emit("goal:cursor_update", {
+       userId,
+       cursorPosition
+     })
+
+5. On disconnect:
+   - Remove user
+   - Notify others
+
+========================
+📡 FRONTEND LOGIC
+========================
+
+1. Join room when page loads
+
+2. Listen events:
+
+- goal:content_update
+  → update editor content
+
+- goal:cursor_update
+  → render other users' cursors
+
+- goal:user_list (optional)
+  → show active collaborators
+
+3. Emit events:
+
+- On text change:
+  socket.emit("goal:update", content)
+
+- On cursor move:
+  socket.emit("goal:cursor_move", cursorPosition)
+
+========================
+✍️ EDITOR BEHAVIOR
+========================
+
+- Use controlled editor state
+- Avoid overwriting while typing
+- Apply changes smoothly (diff-based update preferred)
+
+========================
+🧭 CURSOR SYSTEM
+========================
+
+Each user:
+- Has unique color
+- Cursor position tracked (index / range)
+
+Render:
+- Colored caret
+- Small label with username
+
+========================
+⚡ PERFORMANCE
+========================
+
+- Debounce text updates (e.g., 100–300ms)
+- Throttle cursor updates
+
+========================
+🔐 EDGE CASES
+========================
+
+- Two users typing same place → handle merge (last-write or OT/CRDT optional)
+- User disconnect → remove cursor
+- Late join → load latest content
+
+========================
+📁 OUTPUT REQUIRED
+========================
+
+1. Backend socket code
+2. Frontend editor integration
+3. Cursor rendering logic
+4. Event flow diagram
+5. Conflict handling strategy
+
+========================
+❌ DO NOT
+========================
+
+- Do NOT use page refresh
+- Do NOT overwrite entire content blindly
+- Do NOT ignore cursor sync
+
+========================
+✅ FINAL GOAL
+========================
+
+A real-time collaborative editor like:
+- Google Docs
+- Notion live editing
+
+Where:
+- Users type together
+- See live cursors
+- See instant updates
+
+## promt 30 (OPTIMISTIC UI updates for application)
+
+I want to implement OPTIMISTIC UI updates for my application.
+
+User actions should reflect instantly in the UI BEFORE server confirmation, and if the server fails, the UI should ROLLBACK gracefully.
+
+========================
+🎯 GOAL
+========================
+
+1. When user performs an action (create/update/delete):
+   - UI updates IMMEDIATELY
+   - No waiting for API response
+
+2. If API succeeds:
+   - Keep the change
+
+3. If API fails:
+   - Revert UI to previous state
+   - Show error message (toast)
+
+========================
+🧠 USE CASES
+========================
+
+Apply this to:
+
+- Create Action Item
+- Update Action Item (status, title, etc.)
+- Delete Action Item
+- Drag & Drop in Kanban
+
+========================
+⚙️ FRONTEND LOGIC
+========================
+
+For EACH action:
+
+1. Save previous state:
+   const prevState = getState()
+
+2. Update UI immediately:
+   updateStateOptimistically()
+
+3. Call API:
+   try {
+     await apiCall()
+   } catch (error) {
+     rollback(prevState)
+   }
+
+========================
+📦 EXAMPLES
+========================
+
+CREATE:
+
+- Add item to UI instantly with temporary ID
+- Replace with real ID after API success
+- Remove if API fails
+
+UPDATE:
+
+- Change status instantly
+- If API fails → revert to old status
+
+DELETE:
+
+- Remove from UI instantly
+- If API fails → restore item
+
+========================
+🔄 KANBAN DRAG & DROP
+========================
+
+1. User drags card → update column instantly
+2. Call API to update status
+3. If fails → move card BACK to original column
+
+========================
+🧠 STATE MANAGEMENT
+========================
+
+- Use Zustand / Redux
+- Store previous state snapshot for rollback
+
+Optional:
+- Use Immer for easy state cloning
+
+========================
+⚡ UX DETAILS
+========================
+
+- Show loading indicator (optional)
+- Disable duplicate actions while pending
+- Show toast on error:
+  "Failed to update. Changes reverted."
+
+========================
+🔐 EDGE CASES
+========================
+
+- Multiple rapid updates → queue or debounce
+- Duplicate requests → prevent
+- Network failure → rollback safely
+
+========================
+📁 OUTPUT REQUIRED
+========================
+
+1. Example for:
+   - Create
+   - Update
+   - Delete
+   - Drag & Drop
+
+2. State management implementation
+3. Rollback logic
+4. Error handling UI
+
+========================
+❌ DO NOT
+========================
+
+- Do NOT wait for API before updating UI
+- Do NOT lose previous state
+- Do NOT leave UI in inconsistent state
+
+========================
+✅ FINAL GOAL
+========================
+
+App should feel:
+- Instant
+- Smooth
+- Responsive
+
+Like:
+- Notion
+- Jira
+- ClickUp

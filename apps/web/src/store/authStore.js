@@ -23,21 +23,23 @@ const useAuthStore = create(
         }
       },
 
-      register: async (name, email, password, avatarFile = null) => {
+      register: async (name, email, password, avatar = null) => {
         set({ isLoading: true });
         try {
           let response;
-          if (avatarFile) {
+          // Check if it's a File object or a String URL
+          if (avatar && typeof avatar !== "string") {
             const formData = new FormData();
             formData.append("name", name);
             formData.append("email", email);
             formData.append("password", password);
-            formData.append("avatar", avatarFile);
+            formData.append("avatar", avatar);
             response = await api.post("/auth/register", formData, {
               headers: { "Content-Type": "multipart/form-data" },
             });
           } else {
-            response = await api.post("/auth/register", { name, email, password });
+            // Normal JSON request if avatar is a string URL or null
+            response = await api.post("/auth/register", { name, email, password, avatarUrl: avatar });
           }
           const { data } = response;
           set({ user: data.user, isAuthenticated: true, isLoading: false });
@@ -57,16 +59,21 @@ const useAuthStore = create(
         set({ user: null, isAuthenticated: false });
       },
 
-      updateProfile: async (name, avatarFile = null) => {
+      updateProfile: async (name, avatar = null) => {
         set({ isLoading: true });
         try {
-          const formData = new FormData();
-          formData.append("name", name);
-          if (avatarFile) formData.append("avatar", avatarFile);
-
-          const { data } = await api.put("/users/profile", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
+          let response;
+          if (avatar && typeof avatar !== "string") {
+            const formData = new FormData();
+            formData.append("name", name);
+            formData.append("avatar", avatar);
+            response = await api.put("/users/profile", formData, {
+              headers: { "Content-Type": "multipart/form-data" },
+            });
+          } else {
+            response = await api.put("/users/profile", { name, avatarUrl: avatar });
+          }
+          const { data } = response;
           set({ user: data.user, isLoading: false });
           return { success: true };
         } catch (error) {

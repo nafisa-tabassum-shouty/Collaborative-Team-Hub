@@ -269,7 +269,7 @@ function ListView({ actionItems, updateActionItem, deleteActionItem, onCreateCli
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function KanbanBoard({ workspaceId }) {
-  const { actionItems, fetchActionItems, createActionItem, updateActionItem, deleteActionItem } = useActionItemStore();
+  const { actionItems, fetchActionItems, createActionItem, updateActionItem, deleteActionItem, moveActionItem } = useActionItemStore();
   const { goals, fetchGoals } = useGoalStore();
   const { members, fetchMembers } = useWorkspaceStore();
 
@@ -278,6 +278,7 @@ export default function KanbanBoard({ workspaceId }) {
   );
   const [showModal, setShowModal]         = useState(false);
   const [modalDefaultStatus, setModalDefaultStatus] = useState("TODO");
+  const [dragOverCol, setDragOverCol] = useState(null);
 
   useEffect(() => {
     fetchActionItems(workspaceId);
@@ -346,7 +347,17 @@ export default function KanbanBoard({ workspaceId }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {COLUMNS.map(col => (
             <div key={col.id}
-              className={`flex flex-col bg-bg-card/40 backdrop-blur-sm border border-border-color border-t-4 ${col.color} rounded-2xl min-h-[600px] shadow-sm`}>
+              onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.id); }}
+              onDragLeave={() => setDragOverCol(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverCol(null);
+                const itemId = e.dataTransfer.getData("itemId");
+                if (itemId) moveActionItem(itemId, col.id);
+              }}
+              className={`flex flex-col backdrop-blur-sm border border-border-color border-t-4 ${col.color} rounded-2xl min-h-[600px] shadow-sm transition-colors ${
+                dragOverCol === col.id ? "bg-accent/5 border-accent/40" : "bg-bg-card/40"
+              }`}>
               {/* Column Header */}
               <div className="flex items-center justify-between p-4 border-b border-border-color/50">
                 <div className="flex items-center gap-2">
@@ -362,14 +373,26 @@ export default function KanbanBoard({ workspaceId }) {
               {/* Cards */}
               <div className="flex-1 p-3 space-y-3 overflow-y-auto max-h-[70vh] custom-scrollbar">
                 {grouped[col.id].length === 0 && (
-                  <div className="h-full flex flex-col items-center justify-center py-20 opacity-40">
-                    <div className="text-3xl mb-2">📋</div>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">No Action Items</p>
+                  <div className={`h-full flex flex-col items-center justify-center py-20 transition-opacity ${dragOverCol === col.id ? "opacity-100" : "opacity-40"}`}>
+                    <div className="text-3xl mb-2">{dragOverCol === col.id ? "📥" : "📋"}</div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">
+                      {dragOverCol === col.id ? "Drop here" : "No Action Items"}
+                    </p>
                   </div>
                 )}
                 {grouped[col.id].map(item => (
                   <div key={item.id}
-                    className="bg-bg-card border border-border-color rounded-xl p-4 hover:border-accent/40 hover:shadow-xl transition-all group animate-in fade-in duration-300">
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData("itemId", item.id);
+                      e.currentTarget.classList.add("opacity-50", "scale-95");
+                    }}
+                    onDragEnd={(e) => {
+                      e.currentTarget.classList.remove("opacity-50", "scale-95");
+                    }}
+                    className={`bg-bg-card border border-border-color rounded-xl p-4 hover:border-accent/40 hover:shadow-xl transition-all group animate-in fade-in duration-300 cursor-grab active:cursor-grabbing ${
+                      item._optimistic ? "opacity-70 animate-pulse" : ""
+                    }`}>
                     {/* Priority + Assignee */}
                     <div className="flex justify-between items-start mb-2">
                       <span className={`text-[9px] font-black uppercase ${PRIORITY_COLORS[item.priority] || ""}`}>● {item.priority}</span>
@@ -400,10 +423,10 @@ export default function KanbanBoard({ workspaceId }) {
                       )}
                     </div>
 
-                    {/* Move Actions */}
+                    {/* Quick Move Buttons */}
                     <div className="flex gap-1.5 mt-4 pt-3 border-t border-border-color/30 opacity-0 group-hover:opacity-100 transition-all">
                       {COLUMNS.filter(c => c.id !== col.id).map(c => (
-                        <button key={c.id} onClick={() => updateActionItem(item.id, { status: c.id })}
+                        <button key={c.id} onClick={() => moveActionItem(item.id, c.id)}
                           className="text-[9px] font-black text-accent hover:bg-accent/10 px-2 py-1 rounded transition-colors flex-1 text-center bg-bg-secondary/50">
                           {c.label} →
                         </button>

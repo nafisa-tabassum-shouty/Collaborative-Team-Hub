@@ -124,9 +124,12 @@ export default function GoalsPanel({ workspaceId }) {
     );
   }
 
+import CollaborativeEditor from "./CollaborativeEditor";
+
 function GoalCard({ goal, user, onUpdate, onDelete, onAddMilestone, onUpdateMilestone, onAddComment, onUpdateComment, onDeleteComment }) {
   const { fetchGoalActivity } = useGoalStore();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [showMilestoneForm, setShowMilestoneForm] = useState(false);
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [newComment, setNewComment] = useState("");
@@ -234,11 +237,45 @@ function GoalCard({ goal, user, onUpdate, onDelete, onAddMilestone, onUpdateMile
             <h3 className="text-lg font-bold text-text-primary transition-colors group-hover:text-accent truncate">
               {goal.title}
             </h3>
-            {goal.description && (
-              <p className={`text-text-secondary text-sm mt-1 ${isExpanded ? "" : "line-clamp-1"}`}>
-                {goal.description}
-              </p>
-            )}
+            <div className="group/desc relative mt-1">
+              {isEditingDescription ? (
+                <div onClick={(e) => e.stopPropagation()}>
+                  <CollaborativeEditor 
+                    goalId={goal.id} 
+                    initialContent={goal.description} 
+                    user={user}
+                    onSave={(content) => onUpdate(goal.id, { description: content })}
+                  />
+                  <button 
+                    onClick={() => setIsEditingDescription(false)}
+                    className="mt-2 text-[10px] font-black uppercase text-accent hover:underline"
+                  >
+                    Close Editor
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div 
+                    onClick={(e) => {
+                      if (isExpanded) {
+                        e.stopPropagation();
+                        setIsEditingDescription(true);
+                      }
+                    }}
+                    className={`text-text-secondary text-sm cursor-text hover:bg-bg-secondary/50 rounded p-1 -ml-1 transition-colors ${isExpanded ? "" : "line-clamp-1"}`}
+                    dangerouslySetInnerHTML={{ __html: goal.description || "<i>No description provided. Click to add one.</i>" }}
+                  />
+                  {isExpanded && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setIsEditingDescription(true); }}
+                      className="opacity-0 group-hover/desc:opacity-100 absolute -right-6 top-0 text-accent transition-opacity"
+                    >
+                      ✎
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
             
             {/* Overall Progress Bar */}
             <div className="mt-4 flex items-center gap-3">

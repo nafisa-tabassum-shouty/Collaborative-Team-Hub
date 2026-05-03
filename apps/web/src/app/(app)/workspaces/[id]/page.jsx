@@ -10,6 +10,7 @@ import KanbanBoard from "@/components/workspace/KanbanBoard";
 import AnnouncementsFeed from "@/components/workspace/AnnouncementsFeed";
 import MembersPanel from "@/components/workspace/MembersPanel";
 import DashboardAnalytics from "@/components/workspace/DashboardAnalytics";
+import ToastContainer from "@/components/ui/Toast";
 
 const VIEWS = ["goals", "kanban", "announcements", "members", "analytics"];
 
@@ -61,6 +62,7 @@ export default function WorkspacePage() {
           {renderView()}
         </main>
       </div>
+      <ToastContainer />
     </SocketProvider>
   );
 }

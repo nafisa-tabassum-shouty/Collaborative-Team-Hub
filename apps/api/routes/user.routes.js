@@ -30,8 +30,8 @@ router.get('/profile', async (req, res) => {
 // UPDATE profile (including avatar)
 router.put('/profile', upload.single('avatar'), async (req, res) => {
   try {
-    const { name } = req.body;
-    let avatarUrl = undefined;
+    const { name, avatarUrl: bodyAvatarUrl } = req.body;
+    let avatarUrl = bodyAvatarUrl || undefined;
 
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {

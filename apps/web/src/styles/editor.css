@@ -1,0 +1,35 @@
+/* Collaborative Cursor Styles */
+.remote-cursor {
+  position: absolute;
+  width: 2px;
+  height: 1.2em;
+  pointer-events: none;
+  z-index: 10;
+  transition: all 0.1s ease-out;
+}
+
+.remote-cursor-label {
+  position: absolute;
+  top: -1.2em;
+  left: -2px;
+  padding: 1px 4px;
+  font-size: 10px;
+  font-weight: bold;
+  color: white;
+  white-space: nowrap;
+  border-radius: 2px 2px 2px 0;
+  pointer-events: none;
+}
+
+/* TipTap Editor overrides */
+.ProseMirror {
+  outline: none !important;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
