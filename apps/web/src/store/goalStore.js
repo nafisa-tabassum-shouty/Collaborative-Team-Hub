@@ -1,14 +1,16 @@
 import { create } from "zustand";
 import api from "@/lib/api";
-import useOfflineStore from "./offlineStore";
+import { toast } from "./toastStore";
 
-const useGoalStore = create((set) => ({
+const useGoalStore = create((set, get) => ({
   goals: [],
   activeGoal: null,
   isLoading: false,
+  pendingIds: new Set(),
+
   // Collaboration state
   collaborators: [],
-  remoteCursors: {}, // { userId: { x, y } }
+  remoteCursors: {},
   liveDescription: "",
 
   setCollaborators: (users) => set({ collaborators: users }),
@@ -39,39 +41,37 @@ const useGoalStore = create((set) => ({
   },
 
   createGoal: async (workspaceId, payload) => {
-    const { isOnline, addToQueue } = useOfflineStore.getState();
-
-    if (!isOnline) {
-      // Offline implementation
-      const tempId = `temp-${Date.now()}`;
-      const optimisticGoal = { ...payload, id: tempId, status: "OPEN", createdAt: new Date().toISOString() };
-      
-      set((state) => ({ goals: [optimisticGoal, ...state.goals] }));
-      
-      addToQueue({
-        action: "CREATE_GOAL",
-        method: "POST",
-        endpoint: `/workspaces/${workspaceId}/goals`,
-        payload
-      });
-
-      return { success: true, offline: true };
-    }
+    const tempId = `temp_${Date.now()}`;
+    const optimisticGoal = { 
+      id: tempId, 
+      ...payload, 
+      status: "OPEN", 
+      createdAt: new Date().toISOString(),
+      milestones: [],
+      _count: { milestones: 0 },
+      _optimistic: true
+    };
+    
+    set((state) => ({ goals: [optimisticGoal, ...state.goals] }));
 
     try {
       const { data } = await api.post(`/workspaces/${workspaceId}/goals`, payload);
-      set((state) => ({ goals: [data.goal, ...state.goals] }));
+      set((state) => ({ 
+        goals: state.goals.map((g) => (g.id === tempId ? { ...data.goal, _optimistic: false } : g)) 
+      }));
+      toast.success("Goal created successfully!");
       return { success: true };
     } catch (error) {
+      set((state) => ({ goals: state.goals.filter((g) => g.id !== tempId) }));
+      toast.error(error.response?.data?.error || "Failed to create goal.");
       return { success: false, error: error.response?.data?.error };
     }
   },
 
   updateGoal: async (goalId, payload) => {
-    const previousGoals = [...useGoalStore.getState().goals];
-    const previousActive = useGoalStore.getState().activeGoal;
+    const previousGoals = [...get().goals];
+    const previousActive = get().activeGoal;
 
-    // Optimistic Update
     set((state) => ({
       goals: state.goals.map((g) => (g.id === goalId ? { ...g, ...payload } : g)),
       activeGoal: state.activeGoal?.id === goalId ? { ...state.activeGoal, ...payload } : state.activeGoal
@@ -79,39 +79,58 @@ const useGoalStore = create((set) => ({
 
     try {
       const { data } = await api.put(`/goals/${goalId}`, payload);
-      // Sync with server response
       set((state) => ({
         goals: state.goals.map((g) => (g.id === goalId ? { ...g, ...data.goal } : g)),
         activeGoal: data.goal
       }));
       return { success: true };
     } catch (error) {
-      // Rollback on error
       set({ goals: previousGoals, activeGoal: previousActive });
+      toast.error("Failed to update goal.");
       return { success: false, error: error.response?.data?.error || "Failed to update goal" };
     }
   },
 
   deleteGoal: async (goalId) => {
-    const previousGoals = [...useGoalStore.getState().goals];
+    const previousGoals = [...get().goals];
 
-    // Optimistic Update
     set((state) => ({
       goals: state.goals.filter((g) => g.id !== goalId)
     }));
+    toast.info("Goal deleted.");
 
     try {
       await api.delete(`/goals/${goalId}`);
       return { success: true };
     } catch (error) {
-      // Rollback on error
       set({ goals: previousGoals });
+      toast.error("Failed to delete goal.");
       return { success: false, error: error.response?.data?.error || "Failed to delete goal" };
     }
   },
 
-  // Milestone Actions
   addMilestone: async (goalId, payload) => {
+    const tempId = `temp_${Date.now()}`;
+    const optimisticMilestone = {
+      id: tempId,
+      ...payload,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      _optimistic: true
+    };
+    const previousGoals = [...get().goals];
+
+    set((state) => ({
+      goals: state.goals.map((g) => {
+        if (g.id !== goalId) return g;
+        return {
+          ...g,
+          milestones: [...(g.milestones || []), optimisticMilestone],
+          _count: { ...g._count, milestones: (g._count?.milestones || 0) + 1 }
+        };
+      })
+    }));
+
     try {
       const { data } = await api.post(`/goals/${goalId}/milestones`, payload);
       set((state) => ({
@@ -119,18 +138,31 @@ const useGoalStore = create((set) => ({
           if (g.id !== goalId) return g;
           return {
             ...g,
-            milestones: [...(g.milestones || []), data.milestone],
-            _count: { ...g._count, milestones: (g._count?.milestones || 0) + 1 }
+            milestones: g.milestones.map((m) => (m.id === tempId ? { ...data.milestone, _optimistic: false } : m))
           };
         })
       }));
       return { success: true };
     } catch (error) {
+      set({ goals: previousGoals });
+      toast.error("Failed to add milestone.");
       return { success: false, error: error.response?.data?.error };
     }
   },
 
   updateMilestone: async (goalId, milestoneId, payload) => {
+    const previousGoals = [...get().goals];
+
+    set((state) => ({
+      goals: state.goals.map((g) => {
+        if (g.id !== goalId) return g;
+        return {
+          ...g,
+          milestones: g.milestones.map((m) => (m.id === milestoneId ? { ...m, ...payload } : m))
+        };
+      })
+    }));
+
     try {
       const { data } = await api.put(`/goals/${goalId}/milestones/${milestoneId}`, payload);
       set((state) => ({
@@ -144,6 +176,8 @@ const useGoalStore = create((set) => ({
       }));
       return { success: true };
     } catch (error) {
+      set({ goals: previousGoals });
+      toast.error("Failed to update milestone.");
       return { success: false, error: error.response?.data?.error };
     }
   },
@@ -151,8 +185,10 @@ const useGoalStore = create((set) => ({
   addGoalComment: async (goalId, content) => {
     try {
       const { data } = await api.post(`/goals/${goalId}/comments`, { content });
+      toast.success("Comment posted!");
       return { success: true, comment: data.comment };
     } catch (error) {
+      toast.error("Failed to add comment.");
       return { success: false, error: error.response?.data?.error };
     }
   },
@@ -160,8 +196,10 @@ const useGoalStore = create((set) => ({
   updateGoalComment: async (goalId, commentId, content) => {
     try {
       const { data } = await api.put(`/goals/${goalId}/comments/${commentId}`, { content });
+      toast.success("Comment updated!");
       return { success: true, comment: data.comment };
     } catch (error) {
+      toast.error("Failed to update comment.");
       return { success: false, error: error.response?.data?.error };
     }
   },
@@ -169,8 +207,10 @@ const useGoalStore = create((set) => ({
   deleteGoalComment: async (goalId, commentId) => {
     try {
       await api.delete(`/goals/${goalId}/comments/${commentId}`);
+      toast.info("Comment deleted.");
       return { success: true };
     } catch (error) {
+      toast.error("Failed to delete comment.");
       return { success: false, error: error.response?.data?.error };
     }
   },

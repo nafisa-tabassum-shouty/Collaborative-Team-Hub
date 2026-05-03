@@ -2153,3 +2153,415 @@ Like:
 - Notion
 - Jira
 - ClickUp
+## prompt 31 (authentication issue)
+My application is stuck in an infinite "Verifying session..." loading state.
+
+The spinner keeps running and the app does NOT load properly.
+
+========================
+🚨 PROBLEM
+========================
+
+- "Verifying session" keeps spinning forever
+- User is NOT redirected
+- App does NOT render main content
+
+========================
+🎯 GOAL
+========================
+
+Fix the authentication flow so that:
+
+1. Session is checked ONLY ONCE on app load
+2. Loading state stops correctly
+3. User is either:
+   - Logged in → show app
+   - Not logged in → redirect to login
+
+========================
+🧠 DEBUG TASK (MANDATORY)
+========================
+
+Step 1: Find infinite loop
+
+Check:
+- useEffect dependencies in AuthProvider
+- Is useEffect running multiple times?
+
+Fix:
+useEffect(() => {
+  checkSession();
+}, []); // MUST be empty
+
+------------------------
+
+Step 2: Fix loading state
+
+Ensure:
+
+try {
+  await checkSession()
+} catch(e) {
+  setUser(null)
+} finally {
+  setLoading(false) // MUST ALWAYS RUN
+}
+
+------------------------
+
+Step 3: Fix API retry loop
+
+Check:
+- Is API failing?
+- Is code retrying automatically?
+
+If yes:
+→ STOP infinite retry
+
+------------------------
+
+Step 4: Fix token / cookie issue
+
+Check:
+- Is token sent properly?
+- Is backend returning 401?
+
+If 401:
+→ logout user
+→ stop loop
+
+------------------------
+
+Step 5: Add debug logs
+
+console.log("Checking session...");
+console.log("User:", user);
+console.log("Loading:", loading);
+
+------------------------
+
+Step 6: Prevent multiple calls
+
+Ensure:
+- checkSession is NOT called in multiple components
+- Only called ONCE in AuthProvider
+
+------------------------
+
+Step 7: Fix render condition
+
+Correct logic:
+
+if (loading) return <Spinner />
+
+if (!user) return <Login />
+
+return <App />
+
+========================
+📁 OUTPUT REQUIRED
+========================
+
+1. Fixed AuthProvider code
+2. Fixed useEffect logic
+3. Correct loading handling
+4. Exact reason why spinner was infinite
+
+========================
+❌ DO NOT
+========================
+
+- Do NOT call checkSession multiple times
+- Do NOT keep loading = true forever
+- Do NOT retry infinitely
+
+========================
+✅ FINAL RESULT
+========================
+
+- Spinner shows briefly
+- Then app loads correctly
+- No infinite loop
+
+## prompt 32 (login and signup)
+I want to build a COMPLETE and SECURE authentication system (Login + Signup) using database validation and JWT.
+
+Treat this as a PRODUCTION-LEVEL system. Do NOT give partial or basic solutions.
+
+========================
+🎯 CORE REQUIREMENTS
+========================
+
+1. LOGIN SYSTEM
+- User will enter:
+  - Email (or username)
+  - Password
+
+- Backend MUST:
+  ✔ Check if user exists in database
+  ✔ Compare hashed password (bcrypt)
+
+------------------------
+
+2. SUCCESS CASE
+IF user exists AND password is correct:
+
+- Generate JWT token
+- Send token securely (HTTP-only cookie recommended)
+- Return user data (id, name, email)
+
+Frontend:
+- Save auth state
+- Redirect user to Dashboard
+
+------------------------
+
+3. ERROR CASE (VERY IMPORTANT)
+
+IF user does NOT exist:
+
+- Show message:
+  "No account found with this information. Please sign up first."
+
+- Automatically provide a button or redirect:
+  → Go to Signup page
+
+------------------------
+
+IF password is WRONG:
+
+- Show message:
+  "Incorrect password. Please try again."
+
+------------------------
+
+4. SIGNUP SYSTEM
+
+- Allow new user registration
+- Fields:
+  - Name
+  - Email
+  - Password
+
+Backend:
+- Hash password using bcrypt
+- Save user in database
+
+After signup:
+- Optionally auto-login OR redirect to login
+
+------------------------
+
+5. JWT AUTHENTICATION
+
+- Generate token:
+  jwt.sign({ userId }, SECRET, { expiresIn: "7d" })
+
+- Middleware:
+  - Verify token on protected routes
+  - Attach user to request
+
+------------------------
+
+6. PROTECTED ROUTES
+
+- Only logged-in users can access:
+  - Dashboard
+  - Workspace
+  - Goals
+
+If NOT authenticated:
+→ Redirect to Login page
+
+------------------------
+
+7. FRONTEND LOGIC 
+
+- AuthProvider:
+  - Check session ONCE on app load
+  - Store user in global state
+
+- Login flow:
+  → Submit form → API call → success → redirect
+
+- Error handling:
+  → Show toast or alert message
+
+------------------------
+
+8. UX REQUIREMENTS
+
+- Clear error messages
+- Redirect to signup if user not found
+- No page reload
+- Smooth navigation
+
+------------------------
+
+9. SECURITY (MANDATORY)
+
+- NEVER store plain password
+- Use bcrypt
+- Use HTTP-only cookies for JWT
+- Handle token expiration
+- Prevent multiple login requests
+
+------------------------
+
+10. OUTPUT REQUIRED
+
+You MUST provide:
+
+1. Backend:
+   - Auth routes (login, signup)
+   - JWT middleware
+   - Password hashing
+
+2. Frontend:
+   - Login form
+   - Signup form
+   - AuthProvider logic
+   - Redirect logic
+
+3. Error handling system
+
+4. Exact explanation of flow
+
+------------------------
+
+❌ DO NOT
+
+- Do NOT skip validation
+- Do NOT store plain passwords
+- Do NOT give incomplete code
+- Do NOT ignore error cases
+
+------------------------
+
+✅ FINAL GOAL
+
+System should behave like:
+
+- Facebook login
+- Google login (basic level)
+
+User experience:
+- Correct login → Dashboard
+- Wrong info → clear error
+- No account → redirect to signup
+use only this stack
+Area Technology
+Monorepo Turborepo
+Frontend Next.js 14+ — App Router, JavaScript (no TypeScript)
+Styling Tailwind CSS
+State Zustand
+Backend Node.js + Express.js (REST API)
+Database PostgreSQL + Prisma ORM
+Auth JWT — access + refresh tokens in httpOnly cookies
+Real-time Socket.io
+File storage Cloudinary (avatars & attachments)
+Deployment Railway — frontend & backend as separate services
+Version control Git with clear, conventional commit history
+
+### Prompt 33 (notification system)
+I am building a full-stack web application with the following tech stack:
+
+Frontend:
+- Next.js 14+ (App Router, JavaScript only)
+- Tailwind CSS
+- Zustand (state management)
+
+Backend:
+- Node.js + Express.js (REST API)
+- PostgreSQL with Prisma ORM
+- JWT authentication (access + refresh tokens stored in httpOnly cookies)
+
+Other:
+- Real-time communication using Socket.io
+- Cloudinary for file storage
+- Monorepo setup using Turborepo
+- Deployment on Railway
+
+---
+
+CURRENT REQUIREMENT:
+
+I want to implement a scalable, Facebook-like notification system with the following requirements:
+
+1. Notification Types:
+- Comment on post
+- Reaction on post
+- Mention in comments or posts
+- Added to a group or workspace
+- Assigned in a group/workspace
+- Any user-related activity across all workspaces
+
+2. Core Features:
+- All notifications must be stored in the database (persistent, never deleted automatically)
+- Notifications should remain even after being marked as "read"
+- "Mark all as read" functionality
+- "See all history" page showing all past notifications
+- Unread notification count badge
+- Notifications should be linked to related entities (post, comment, workspace, etc.)
+
+3. Real-time Behavior:
+- Instant notification delivery using Socket.io
+- If user is online → push instantly
+- If offline → store and show later
+
+4. Backend Requirements:
+- First, analyze if notification-related tables already exist
+- If NOT, design a proper Prisma schema for notifications:
+    - id
+    - userId (receiver)
+    - actorId (who triggered it)
+    - type
+    - message
+    - entityId (post/comment/workspace reference)
+    - isRead
+    - createdAt
+
+- Create APIs:
+    - GET /notifications (with pagination)
+    - PATCH /notifications/mark-all-read
+    - PATCH /notifications/:id/read
+
+- Middleware to trigger notifications on:
+    - comment creation
+    - reaction
+    - mention detection (@username)
+    - workspace/group events
+
+5. Frontend Requirements:
+- Notification dropdown UI (like Facebook)
+- Fix issue where actor name shows as "undefined"
+- Show:
+    - actor name
+    - action message
+    - timestamp
+- Zustand store to manage notification state
+- "See all history" page that fetches all notifications from backend
+
+6. Bug Fix:
+Currently, notification shows:
+"@ undefined mentioned you in a comment"
+
+Fix this by properly populating actor (user) data from backend.
+
+7. Performance Considerations:
+- Pagination or infinite scroll for notifications
+- Avoid unnecessary re-renders
+- Efficient socket event handling
+
+---
+
+EXPECTED OUTPUT:
+
+- Prisma schema for Notification
+- Backend API structure
+- Socket.io event design
+- Frontend Zustand store structure
+- UI component structure for notification dropdown and history page
+- Fix for "undefined actor" bug
+
+Make the solution clean, scalable, and production-ready.

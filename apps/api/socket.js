@@ -49,6 +49,11 @@ module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log(`🔌 Client connected: ${socket.user.name} (${socket.id})`);
 
+    // Join a private room for the user to receive individual notifications
+    const userRoom = `user_${socket.user.id}`;
+    socket.join(userRoom);
+    console.log(`👤 User joined private room: ${userRoom}`);
+
     // =====================================
     // Workspace Room Management
     // =====================================

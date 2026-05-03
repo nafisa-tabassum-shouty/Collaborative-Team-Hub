@@ -151,10 +151,12 @@ router.post('/', async (req, res) => {
           type: "ASSIGNMENT",
           content: `${req.user.name} assigned a new task to you: "${actionItem.title}"`,
           link: contextUrl,
-          userId: assigneeId
-        }
+          userId: assigneeId,
+          actorId: req.user.id
+        },
+        include: { actor: { select: { name: true, avatarUrl: true } } }
       });
-      req.io.to(`workspace_${goal.workspaceId}`).emit("notification:new", notification);
+      req.io.to(`user_${assigneeId}`).emit("notification:new", notification);
     }
 
     res.status(201).json({ message: "Action item created", actionItem });

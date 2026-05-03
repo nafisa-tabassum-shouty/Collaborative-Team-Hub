@@ -8,23 +8,25 @@ const useAuthStore = create(
     (set) => ({
       user: null,
       isAuthenticated: false,
-      isLoading: false,
+      isLoading: false, // General loading (e.g., fetchMe)
+      isAuthenticating: false, // Specifically for login/signup submit
+      isUpdatingProfile: false,
 
       login: async (email, password) => {
-        set({ isLoading: true });
+        set({ isAuthenticating: true });
         try {
           const { data } = await api.post("/auth/login", { email, password });
-          set({ user: data.user, isAuthenticated: true, isLoading: false });
+          set({ user: data.user, isAuthenticated: true, isAuthenticating: false });
           connectSocket(); // Connect socket after login
           return { success: true };
         } catch (error) {
-          set({ isLoading: false });
+          set({ isAuthenticating: false });
           return { success: false, error: error.response?.data?.error || "Login failed" };
         }
       },
 
       register: async (name, email, password, avatar = null) => {
-        set({ isLoading: true });
+        set({ isAuthenticating: true });
         try {
           let response;
           // Check if it's a File object or a String URL
@@ -42,11 +44,11 @@ const useAuthStore = create(
             response = await api.post("/auth/register", { name, email, password, avatarUrl: avatar });
           }
           const { data } = response;
-          set({ user: data.user, isAuthenticated: true, isLoading: false });
+          set({ user: data.user, isAuthenticated: true, isAuthenticating: false });
           connectSocket();
           return { success: true };
         } catch (error) {
-          set({ isLoading: false });
+          set({ isAuthenticating: false });
           return { success: false, error: error.response?.data?.error || "Registration failed" };
         }
       },
@@ -60,7 +62,7 @@ const useAuthStore = create(
       },
 
       updateProfile: async (name, avatar = null) => {
-        set({ isLoading: true });
+        set({ isUpdatingProfile: true });
         try {
           let response;
           if (avatar && typeof avatar !== "string") {
@@ -74,10 +76,10 @@ const useAuthStore = create(
             response = await api.put("/users/profile", { name, avatarUrl: avatar });
           }
           const { data } = response;
-          set({ user: data.user, isLoading: false });
+          set({ user: data.user, isUpdatingProfile: false });
           return { success: true };
         } catch (error) {
-          set({ isLoading: false });
+          set({ isUpdatingProfile: false });
           return { success: false, error: error.response?.data?.error || "Profile update failed" };
         }
       },
@@ -86,8 +88,12 @@ const useAuthStore = create(
         set({ isLoading: true });
         try {
           const { data } = await api.get("/auth/me");
-          set({ user: data.user, isAuthenticated: true, isLoading: false });
-          connectSocket();
+          if (data?.user) {
+            set({ user: data.user, isAuthenticated: true, isLoading: false });
+            connectSocket();
+          } else {
+            set({ user: null, isAuthenticated: false, isLoading: false });
+          }
         } catch (_) {
           set({ user: null, isAuthenticated: false, isLoading: false });
         }

@@ -8,7 +8,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const { login, isAuthenticating } = useAuthStore();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
@@ -53,8 +53,21 @@ export default function LoginPage() {
         {/* Card */}
         <div className="bg-bg-card border border-border-color rounded-3xl p-8 shadow-2xl shadow-black/5 transition-colors">
           {error && (
-            <div className="mb-6 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium animate-shake">
-              {error}
+            <div className="mb-6 px-4 py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex items-start gap-3">
+                <span className="text-lg">⚠️</span>
+                <div className="flex-1">
+                  <p>{error}</p>
+                  {error.includes("sign up first") && (
+                    <button 
+                      onClick={() => router.push("/register")}
+                      className="mt-2 flex items-center gap-2 text-accent hover:text-accent-hover font-bold transition-all group"
+                    >
+                      Sign up for an account <span className="group-hover:translate-x-1 transition-transform">→</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -84,10 +97,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isAuthenticating}
               className="w-full bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98]"
             >
-              {isLoading ? "Authenticating..." : "Sign In"}
+              {isAuthenticating ? "Authenticating..." : "Sign In"}
             </button>
           </form>
 

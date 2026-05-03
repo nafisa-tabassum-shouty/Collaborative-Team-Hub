@@ -42,7 +42,8 @@ model User {
   comments      Comment[]
   reactions     Reaction[]
   auditLogs     AuditLog[]
-  notifications Notification[]
+  notifications Notification[]    @relation("UserNotifications")
+  triggeredNotifications Notification[] @relation("ActorNotifications")
 }
 
 model Workspace {
@@ -149,6 +150,11 @@ model Comment {
   
   announcementId String?
   announcement   Announcement? @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  // Reply functionality
+  parentId       String?
+  parent         Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies        Comment[]     @relation("CommentReplies")
 }
 
 model Reaction {
@@ -181,12 +187,17 @@ model AuditLog {
 
 model Notification {
   id          String    @id @default(uuid())
-  type        String    // e.g., "MENTION", "COMMENT"
+  type        String    // e.g., "MENTION", "COMMENT", "REACTION", "ASSIGNMENT", "WORKSPACE_JOIN"
   content     String
   link        String?   // URL or route to click
   isRead      Boolean   @default(false)
   createdAt   DateTime  @default(now())
   
-  userId      String    // The user who receives it
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String    // The receiver
+  user        User      @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  
+  actorId     String?   // Who triggered it
+  actor       User?     @relation("ActorNotifications", fields: [actorId], references: [id], onDelete: SetNull)
+
+  entityId    String?   // Reference to post/comment/workspace
 }
